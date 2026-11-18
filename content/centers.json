@@ -1,0 +1,182 @@
+[
+  {
+    "id": "creation",
+    "label": "J'ai envie de créer, construire, rénover",
+    "short": "Créer & construire",
+    "riasec": { "R": 0.5, "A": 0.5 }
+  },
+  {
+    "id": "leadership",
+    "label": "J'ai l'âme d'un chef / d'une cheffe",
+    "short": "Diriger",
+    "riasec": { "E": 0.8, "S": 0.2 }
+  },
+  {
+    "id": "business",
+    "label": "J'ai le sens des affaires",
+    "short": "Business",
+    "riasec": { "E": 0.7, "C": 0.3 }
+  },
+  {
+    "id": "contact",
+    "label": "J'ai le sens du contact",
+    "short": "Contact",
+    "riasec": { "S": 0.7, "E": 0.3 }
+  },
+  {
+    "id": "public",
+    "label": "J'ai le sens du service public",
+    "short": "Service public",
+    "riasec": { "S": 0.6, "C": 0.4 }
+  },
+  {
+    "id": "detail",
+    "label": "J'ai le souci du détail",
+    "short": "Précision",
+    "riasec": { "C": 0.8, "I": 0.2 }
+  },
+  {
+    "id": "drawing",
+    "label": "J'ai un bon coup de crayon",
+    "short": "Dessin",
+    "riasec": { "A": 0.9, "R": 0.1 }
+  },
+  {
+    "id": "convince",
+    "label": "J'aime communiquer, convaincre",
+    "short": "Convaincre",
+    "riasec": { "E": 0.8, "S": 0.2 }
+  },
+  {
+    "id": "nature",
+    "label": "J'aime être au contact de la nature",
+    "short": "Nature",
+    "riasec": { "R": 0.8, "I": 0.2 }
+  },
+  {
+    "id": "discovery",
+    "label": "J'aime faire des découvertes",
+    "short": "Découverte",
+    "riasec": { "I": 0.8, "R": 0.2 }
+  },
+  {
+    "id": "rules",
+    "label": "J'aime faire respecter la loi, les règles",
+    "short": "Règles",
+    "riasec": { "C": 0.7, "S": 0.3 }
+  },
+  {
+    "id": "words",
+    "label": "J'aime jouer avec les mots",
+    "short": "Mots",
+    "riasec": { "A": 0.7, "I": 0.3 }
+  },
+  {
+    "id": "physical",
+    "label": "J'aime l'activité physique",
+    "short": "Physique",
+    "riasec": { "R": 0.8, "E": 0.2 }
+  },
+  {
+    "id": "manual",
+    "label": "J'aime le travail manuel",
+    "short": "Manuel",
+    "riasec": { "R": 0.9, "C": 0.1 }
+  },
+  {
+    "id": "numbers",
+    "label": "J'aime manier les chiffres",
+    "short": "Chiffres",
+    "riasec": { "C": 0.7, "I": 0.3 }
+  },
+  {
+    "id": "travel",
+    "label": "J'aime me déplacer et voyager",
+    "short": "Voyager",
+    "riasec": { "E": 0.5, "R": 0.5 }
+  },
+  {
+    "id": "animals",
+    "label": "J'aime m'occuper des animaux",
+    "short": "Animaux",
+    "riasec": { "R": 0.7, "S": 0.3 }
+  },
+  {
+    "id": "organize",
+    "label": "J'aime organiser, planifier",
+    "short": "Organiser",
+    "riasec": { "C": 0.7, "E": 0.3 }
+  },
+  {
+    "id": "drive",
+    "label": "J'aime piloter, conduire",
+    "short": "Conduire",
+    "riasec": { "R": 0.8, "C": 0.2 }
+  },
+  {
+    "id": "environment",
+    "label": "Je souhaite contribuer à la protection de l'environnement",
+    "short": "Environnement",
+    "riasec": { "R": 0.5, "I": 0.5 }
+  },
+  {
+    "id": "children",
+    "label": "Je souhaite m'occuper d'enfants",
+    "short": "Enfance",
+    "riasec": { "S": 0.9, "A": 0.1 }
+  },
+  {
+    "id": "care",
+    "label": "Je souhaite prendre soin des autres",
+    "short": "Soin",
+    "riasec": { "S": 0.9 }
+  },
+  {
+    "id": "rescue",
+    "label": "Je souhaite protéger et secourir",
+    "short": "Secours",
+    "riasec": { "S": 0.6, "R": 0.4 }
+  },
+  {
+    "id": "teach",
+    "label": "Je souhaite transmettre",
+    "short": "Transmettre",
+    "riasec": { "S": 0.7, "A": 0.3 }
+  },
+  {
+    "id": "thrill",
+    "label": "Je suis amateur / amatrice de sensations fortes",
+    "short": "Sensations",
+    "riasec": { "R": 0.6, "E": 0.4 }
+  },
+  {
+    "id": "backstage",
+    "label": "Je suis attiré / attirée par l'envers du décor",
+    "short": "Coulisses",
+    "riasec": { "I": 0.6, "R": 0.4 }
+  },
+  {
+    "id": "cooking",
+    "label": "Je suis passionné / passionnée par la cuisine",
+    "short": "Cuisine",
+    "riasec": { "R": 0.6, "A": 0.4 }
+  },
+  {
+    "id": "cultures",
+    "label": "Je suis passionné / passionnée par les autres cultures",
+    "short": "Cultures",
+    "riasec": { "S": 0.5, "I": 0.5 }
+  },
+  {
+    "id": "tech",
+    "label": "Je suis passionné / passionnée par les nouvelles technologies",
+    "short": "Tech",
+    "riasec": { "I": 0.8, "R": 0.2 }
+  },
+  {
+    "id": "art",
+    "label": "Je suis un / une artiste",
+    "short": "Artiste",
+    "riasec": { "A": 0.9, "E": 0.1 }
+  }
+]

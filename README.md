@@ -1,30 +1,220 @@
-# Équipe 08 — Hackathon Azuréen #3
+# Déclic
 
-Projet réalisé à Nice les 18, 19 et 20 novembre 2026, sur le thème **« L'orientation et l'employabilité grâce à l'IA »**, organisé par [Code4Sud](https://code4sud.fr).
+> **T'as plus de skills que tu crois.**
 
-## Le projet
+Déclic est un jeu de cartes qui aide les 17–25 ans éloignés de l'emploi à mettre des mots sur ce qu'ils savent faire. On swipe des activités concrètes, on répond à 15 choix entre deux situations de travail, puis l'app rend **3 directions métier** avec, pour chacune, les cartes qui la soutiennent, les compétences ROME et un point de friction.
 
-_Deux ou trois phrases : le problème, la solution, pour qui._
+Ce n'est pas un test psychologique. C'est une boussole : **le jeune valide tout ce qui est retenu**.
 
-## Lancer le projet
+**Démo en ligne** : https://declic-livid.vercel.app
+
+- Modèle complet, décisions et limites : [`docs/BASELINE.md`](docs/BASELINE.md)
+- 30 domaines ROME 4.0 · 1 923 métiers importés · ~213 métiers accessibles dans la démo
+- 5 spectres de travail · 15 paires de choix forcés
+- Local-first : pas de compte, pas de backend, données dans `localStorage`
+
+---
+
+## Démarrer
 
 ```bash
-# Comment installer et démarrer, en 5 lignes maximum
+npm install
+npm run dev
 ```
 
-## Publier sur le site du hackathon
+Routes :
 
-1. Complétez `projet.json` (nom, pitch, description, écoles, technologies, liens).
-2. Ajoutez vos captures dans `captures/` et listez-les dans `projet.json`.
-3. Poussez sur `main` : votre fiche apparaît sur https://orientation.code4sud.fr/projets/equipe-08 en moins d'une minute.
+| Route | Écran |
+|---|---|
+| `/` | accueil |
+| `/deck` | swipe des intérêts + confirmations |
+| `/style` | 15 paires de style de travail |
+| `/result` | restitution, 3 directions, export |
 
-Toute la doc : https://orientation.code4sud.fr/doc/
+> Ce projet utilise **Next.js 16.4**. Les APIs ont changé : lire `node_modules/next/dist/docs/` avant d'écrire du code (voir `AGENTS.md`).
 
-## Démo en ligne
+## Scripts
 
-Si votre projet est un site sans serveur, il est publié automatiquement sur GitHub Pages à chaque push :
-`https://code4sud.github.io/2026-equipe-08/`. Reportez cette adresse dans le champ `demo` de `projet.json`.
+```bash
+npm run dev          # serveur de développement
+npm run build        # build production
+npm test             # 17 tests Vitest (scoring, convergence, matching)
+npm run import:rome  # régénère data/rome/*.json depuis le dump ROME
+npm run lint
+```
 
-## Licence
+---
 
-MIT — voir `LICENSE`.
+## Données ROME
+
+Source : **ROME 4.0 v62 — 26M10** (octobre 2026), France Travail, Licence Ouverte.
+Dump public : `https://api.francetravail.fr/api-nomenclatureemploi/v1/open-data/json`
+
+Le dump est un ZIP de JSON encodés en **ISO-8859-1**. Le script `scripts/import-rome.mjs` :
+
+1. dézippe et convertit en UTF-8 ;
+2. relie les 30 centres d'intérêt ROME aux 1 923 métiers ;
+3. extrait contextes de travail, savoir-faire, savoir-être, accès ;
+4. normalise le niveau d'accès (0 = sans diplôme … 5 = Bac+5) ;
+5. filtre les parcours trop longs / réglementés / hors cible ;
+6. génère `centers.json`, `jobs.json` (complet, local) et `jobs-featured.json` (versionné).
+
+```bash
+mkdir -p data/rome
+curl -sL "https://api.francetravail.fr/api-nomenclatureemploi/v1/open-data/json" \
+  -o data/rome/rome-4.0-json.zip
+unzip -o data/rome/rome-4.0-json.zip -d data/rome/unzipped
+npm run import:rome
+```
+
+Fichiers :
+
+| Fichier | Versionné | Rôle |
+|---|---|---|
+| `data/rome/centers.json` | oui | 30 centres + définitions + projection Holland |
+| `data/rome/jobs-featured.json` | oui | ~213 métiers accessibles utilisés par l'app |
+| `data/rome/jobs.json` | non (5 Mo) | les 1 923 métiers, pour la recherche future |
+| `data/rome/unzipped/` | non (88 Mo) | dump brut |
+
+> **Limite connue** : le lien ROME « centre d'intérêt → métier » est bruité. Certains centres ramènent des métiers peu représentatifs (« panéliste », « caviste de chai »). Une curation humaine des 3 métiers par direction est la prochaine amélioration à fort impact.
+
+---
+
+## Algorithme (résumé)
+
+### 1. Intérêts — 30 centres ROME
+
+Chaque carte a un poids sur 1–3 centres. Chaque centre a un prior `Beta(1,2 ; 1,2)`.
+
+```
+droite  → α += w · q
+gauche  → β += 0,8 · w · q
+jamais essayé / barrière d'accès → aucun update
+```
+
+- `moyenne = α/(α+β)`, confiance = largeur de l'intervalle crédible.
+- « Jamais essayé » n'est **pas** un rejet.
+- Les raisons (pas mon truc / pas les moyens / peur de pas y arriver) séparent goût, accès et confiance.
+
+### 2. Confirmation — le jeune verrouille
+
+Un domaine devient proposable à `moyenne ≥ 0,72`, `lower80 ≥ 0,60`, `nEff ≥ 3,5`, `≥ 4 cartes likées`.
+L'app affiche alors une carte de confirmation avec les preuves. **Oui** verrouille et retire le domaine du deck ; **pas vraiment** le remet au prior et l'écarte.
+
+### 3. Sélection — couverture puis UCB
+
+- Cartes 1–15 : couverture des domaines jamais vus.
+- Cartes 16+ : `priorité = moyenne + 0,38·sqrt(log(n+2)/(nEff+0,5))`, focus 30 → 12 → 6 domaines, 35 % d'exploration hors focus.
+- Plafond dur : 48 cartes. Cible : 35.
+
+### 4. Style de travail — 5 spectres
+
+Énergie sociale, structure, ouverture, coopération, rythme. 15 paires, 3 par spectre, pôles inversés. Le score est une moyenne `[-1, 1]` ; la confiance vient du nombre de réponses. **Aucun trait clinique, aucun neuroticisme.**
+
+### 5. Matching
+
+```
+intérêt  = cos(vecteur 30 centres, centres du métier) − pénalité domaines rejetés
+contexte = adéquation des 5 spectres aux contextes ROME du métier
+score    = 0,65·intérêt + 0,35·contexte − pénalité de mismatch
+```
+
+Puis MMR pour diversifier. Les **directions suivent les domaines les plus forts de la personne** (confirmés d'abord), pas le meilleur score isolé.
+
+### 6. Restitution
+
+- Code Holland à 3 lettres + mots (Concret · Analyser · Organiser).
+- Domaines forts en second (Manuel · Tech · Nature).
+- 3 directions × 3–4 métiers, avec preuves, compétences ROME, friction, niveau d'accès.
+- Panneau « ce qu'on ne sait pas encore » + 3 questions pour l'entretien.
+- Export JSON + impression.
+
+---
+
+## Structure
+
+```
+app/
+  page.tsx            accueil
+  deck/page.tsx       swipe + confirmation
+  style/page.tsx      15 paires
+  result/page.tsx     restitution + export
+lib/
+  types.ts            types partagés
+  centers.ts          30 centres → 6 Holland
+  traits.ts           5 spectres + contextes ROME + friction
+  score.ts            Beta, confirmation, cohérence
+  select.ts           couverture + UCB + focus
+  match.ts            matching + MMR + directions
+  store.ts            Zustand + localStorage
+  demo.ts             persona de démonstration
+  presentation.ts     couleurs, labels, niveaux
+  useMounted.ts       garde d'hydratation
+content/
+  cards.ts            80+ cartes
+  pairs.ts            15 paires
+  centers.json        source des centres
+data/rome/            JSON générés
+scripts/import-rome.mjs
+docs/BASELINE.md
+```
+
+---
+
+## Tests
+
+`npm test` couvre 17 cas :
+
+- couverture des 30 centres et poids des cartes ;
+- like / dislike / « jamais essayé » / barrières d'accès ;
+- confirmation d'un domaine fort, rejet d'un domaine fort ;
+- convergence d'un utilisateur simulé en 35 swipes adaptatifs ;
+- sélection sans doublon, 15 paires sans doublon ;
+- matching, diversité, 3 directions ;
+- persona de démonstration.
+
+```bash
+npm test
+```
+
+---
+
+## Éthique — les règles du produit
+
+1. **Aucune inférence** sur la santé, le handicap, l'origine, la religion, la famille, l'orientation sexuelle, les opinions politiques, la situation administrative.
+2. **Aucun trait de personnalité déduit des intérêts.** Les spectres sont demandés directement, dans une séquence séparée.
+3. **Le jeune valide** chaque domaine retenu ; il peut reformuler, écarter, recommencer.
+4. **On ne classe pas les personnes, on classe des pistes.** Pas de score d'employabilité, pas de probabilité de réussite.
+5. **Local-first** : pas de compte, pas de serveur, export déclenché par le jeune.
+
+---
+
+## 3 jours / 6 personnes
+
+| Rôle | Jour 1 | Jour 2 | Jour 3 |
+|---|---|---|---|
+| Data / ROME | import v62, 213 métiers | curation des directions | gel |
+| Contenu | 80+ cartes | audit stéréotypes | gel |
+| Scoring | Beta + UCB + tests | contexte + MMR | gel |
+| UI deck | swipe + confirmation | chips, profil 15 | polish |
+| UI restitution | radar, 3 directions | frictions, zones grises | polish |
+| Style + export | 15 paires, dossier JSON | impression, démo | pitch |
+
+**Gel vendredi 12h.** Après : répétition, vidéo de secours, pitch.
+
+### Script de démo (90 s)
+
+1. Ouvrir `/result` sur la persona de démonstration → Manuel / Tech / Nature, preuves, friction.
+2. 12 swipes sur `/deck` → le profil bouge, la confiance monte.
+3. Déclencher une confirmation → le jeune valide → le domaine se verrouille.
+4. 5 paires sur `/style` → « même code Holland, environnement différent ».
+5. Restitution + export.
+
+---
+
+## Limites assumées
+
+- **Pas de récit libre dans le MVP** : le brief du Sujet 4 demande « faire raconter ». Le récit texte + extraction + validation est un stretch (1 dev) documenté dans `docs/BASELINE.md` §5. Sans lui, la démo reste honnête : les preuves sont les cartes, et le brief conseiller liste les questions à explorer.
+- **Mapping ROME centres → métiers bruité** : curation humaine nécessaire.
+- **Pas de calibration statistique** : les poids sont experts, le modèle est une heuristique sérieuse, pas un instrument validé.
+- **Pas de voix**, pas de compte, pas de base de données.

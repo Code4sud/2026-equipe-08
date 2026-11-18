@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+@theme {
+  --color-paper: #f7f2e8;
+  --color-ink: #141414;
+  --color-accent: #ff5a36;
+  --color-mint: #c8f169;
+  --color-sky: #2a5bff;
+  --color-sand: #e9dfc9;
+  --color-muted: #7a7264;
+
+  --font-sans: "SF Pro Rounded", "Nunito", ui-rounded, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    overscroll-behavior-y: none;
+  }
+
+  button {
+    font-family: inherit;
+  }
+
+  ::selection {
+    background: var(--color-mint);
+    color: var(--color-ink);
+  }
+}
+
+@layer utilities {
+  .hard-shadow {
+    box-shadow: 5px 5px 0 0 var(--color-ink);
+  }
+
+  .hard-shadow-sm {
+    box-shadow: 3px 3px 0 0 var(--color-ink);
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .grain {
+    background-image: radial-gradient(
+      rgba(20, 20, 20, 0.055) 0.6px,
+      transparent 0.6px
+    );
+    background-size: 5px 5px;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+  }
+}
