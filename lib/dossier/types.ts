@@ -11,6 +11,7 @@ import type {
   TraitResponse,
 } from "../types";
 import type { CvAnswers, CvField, Interview } from "../interview";
+import type { SkillMatch } from "../matches";
 
 export type StudiesLevel =
   | "sans-diplome"
@@ -69,7 +70,7 @@ export type DossierSession = {
   interviews?: Interview[];
   cv?: CvAnswers;
   cvSkipped?: CvField[];
-  matchedSkills?: string[];
+  skillMatches?: SkillMatch[];
 };
 
 export type TrainingEstablishment = {

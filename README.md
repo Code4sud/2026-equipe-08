@@ -30,7 +30,8 @@ Routes :
 |---|---|
 | `/` | accueil |
 | `/deck` | swipe des intérêts + confirmations |
-| `/creuser` | étape 2 : questions ouvertes sur une expérience prouvée + infos CV, dictée vocale locale |
+| `/matchs` | mémoire des skill matches (« déjà fait ») + métiers ROME proposés par l'IA |
+| `/creuser` | « On creuse » : récit sur un métier choisi + infos CV, dictée vocale locale |
 | `/style` | 15 paires de style de travail |
 | `/result` | restitution, 3 directions, export |
 
@@ -44,6 +45,7 @@ npm run build        # build production
 npm test             # tests Vitest (scoring, convergence, matching, swipe adaptatif)
 npm run import:rome  # régénère data/rome/*.json depuis le dump ROME
 npm run build:skills # régénère data/rome/skills.json (macro-compétences ROME)
+npm run build:jobs   # régénère data/rome/jobs-index.json (849 métiers accessibles, pour « Mes matchs »)
 npm run lint
 ```
 

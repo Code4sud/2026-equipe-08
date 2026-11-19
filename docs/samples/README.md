@@ -1,6 +1,13 @@
 # Échantillons de profil Orientis
 
-Profil **fictif** (« manuel + tech »), calculé par le vrai code du projet (score, swipe adaptatif, matching) à partir d'une session de 24 swipes et des 15 paires de style. Les textes des 7 cartes adaptatives sont écrits à la main dans le style du LLM ; leurs cibles ROME viennent de l'algorithme. L'étape 2 (« Creuser ») contient deux expériences racontées : 3 questions chacune, réellement générées par le LLM, avec des réponses fictives (une question passée = réponse vide). Elle contient aussi 6 infos CV fictives, collectées au fil des deux récits (3 par récit). Le permis et la mobilité n'ont pas encore été demandés : ils l'auraient été au récit suivant. `user.constraints` est donc absent. C'est un cas normal, que le CV doit savoir gérer.
+Profil **fictif** (« manuel + tech »), calculé par le vrai code du projet à partir d'une session de 21 swipes et des 15 paires de style : score, swipe adaptatif, matching. Les textes des 4 cartes adaptatives sont écrits à la main, dans le style du LLM. Leurs cibles ROME viennent de l'algorithme.
+
+Les éléments suivants ont été **réellement générés par le LLM** (mode `cli`) :
+- les 9 **skill matches**, chacun avec sa compétence ROME (2 n'en ont pas, aucune ne collait) ;
+- les 5 **métiers proposés** dans « Mes matchs » ;
+- les questions de « On creuse ».
+
+Deux métiers ont été creusés (Mécanicien cycles, Réparateur multimédia), avec des réponses fictives. Une question passée a une réponse vide. Il y a aussi 6 infos CV fictives (3 par récit). Le permis et la mobilité n'ont pas encore été demandés, donc `user.constraints` est absent. C'est un cas normal, que le CV doit savoir gérer.
 
 | Fichier | Ce que c'est | Où le trouver dans l'app |
 |---|---|---|
@@ -9,19 +16,23 @@ Profil **fictif** (« manuel + tech »), calculé par le vrai code du projet (sc
 
 ## Pour un CV : ce qui compte
 
-**0. Le plus direct : `user` et `interviews`** dans `declic-dossier.sample.json` (étape 2, « Creuser »).
+**0. Le plus direct : `user`, `interviews` et `skillMatches`** dans `declic-dossier.sample.json`.
 
-- `user` suit les champs `user` du contrat d'entrée de `docs/DOSSIER.md` : prénom, âge, code postal, ville, niveau d'études, situation, permis, mobilité. Chaque expérience racontée devient une entrée de `user.experience`, avec sa compétence ROME dans `competences`. Les réponses libres qui ne rentrent dans aucun champ restent dans `user.raw`.
-- `interviews[]` : pour chaque expérience creusée, la compétence ROME (`skill.code`, `skill.label`), la preuve (carte d'origine + question de vécu) et les questions / réponses (`qa`). Une réponse vide = question passée.
+- `user` suit les champs `user` du contrat d'entrée de `docs/DOSSIER.md` : prénom, âge, code postal, ville, niveau d'études, situation, permis, mobilité. Chaque récit devient une entrée de `user.experience`, avec ses compétences ROME dans `competences`. `user.targetJobs` donne les métiers que le jeune a choisi de creuser. Les réponses libres qui ne rentrent dans aucun champ restent dans `user.raw`.
+- `interviews[]` : un récit par **métier choisi** dans « Mes matchs ». Il contient :
+  - `job.code` et `job.label` (code et intitulé ROME) ;
+  - les expériences vécues sur lesquelles il s'appuie (`experiences[].card`, `experiences[].skill`) ;
+  - les questions et réponses (`qa`). Une réponse vide = question passée.
+- `skillMatches[]` : tout ce que le jeune a **déjà fait** (`card`), avec `reason` (souvent / une fois) et la compétence ROME prouvée (`skill`, ou `null` si aucune ne colle).
 - Les réponses sont orales (écrites ou dictées) : à reformuler pour le CV, sans rien inventer.
 
-**1. Le vécu (« déjà fait »)** : dans `declic-session.sample.json`, `responses[]`.
+**1. Le détail du vécu** : dans `declic-session.sample.json`.
 
-- `reason: "deja-souvent"` ou `"deja-une-fois"` sur une carte d'intérêt = le jeune l'a **déjà fait**.
-- Une carte dont l'id commence par `gen-creuser-` pose une question de vécu (« Et c'est toi qui… ? ») : `direction: "right"` = **oui, c'est moi**, `"left"` = non (ni rejet, ni intérêt).
-- La carte générée correspondante (`generated[]`, même `id`) porte la **compétence ROME** dans `target.label` (code OGR dans `target.macro`) et la carte d'origine dans `target.parentId`.
+- `skillMatches[]` : la même mémoire des matchs, avec l'id de la carte (`cardId`).
+- `jobs.list[]` : les métiers proposés dans « Mes matchs ». Chacun a son code ROME, son accroche (`pitch`) et les cartes qui le soutiennent (`cardIds`).
+- `responses[]` : chaque swipe. `reason: "deja-souvent"` ou `"deja-une-fois"` = le jeune l'a **déjà fait**.
 
-  Exemple dans l'échantillon : « Réparer un vélo crevé » (déjà fait souvent) → « Et c'est toi qui trouvais d'où venait la panne ? » → oui → compétence ROME *Réparer un équipement, une machine, une installation*.
+  Exemple dans l'échantillon : « Réparer un vélo crevé » (déjà fait souvent) → compétence ROME *Réparer un équipement, une machine, une installation* → métier proposé *Mécanicien / Mécanicienne cycles* → récit.
 
 **2. Les intérêts** : `profile.confirmed` (domaines validés par le jeune), `profile.code` (code Holland à 3 lettres), `profile.domains[id].mean` (0–1).
 

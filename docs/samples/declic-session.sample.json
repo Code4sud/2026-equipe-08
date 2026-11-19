@@ -8,185 +8,147 @@
       "latencyMs": 3372
     },
     {
-      "cardId": "gen-creuser-300182-reparer-velo",
-      "direction": "right",
-      "ts": 1795096935071,
-      "latencyMs": 3361
-    },
-    {
       "cardId": "baby-sitting",
       "direction": "left",
       "reason": "pas-mon-truc",
-      "ts": 1795096943835,
+      "ts": 1795096937528,
       "latencyMs": 3372
     },
     {
       "cardId": "bricoler",
       "direction": "right",
       "reason": "deja-une-fois",
-      "ts": 1795096951011,
+      "ts": 1795096944704,
       "latencyMs": 2848
     },
     {
       "cardId": "gen-explorer-300260",
       "direction": "right",
       "reason": "jamais-fait-mais-tente",
-      "ts": 1795096957554,
+      "ts": 1795096951247,
       "latencyMs": 4289
     },
     {
       "cardId": "theatre",
       "direction": "left",
       "reason": "pas-mon-truc",
-      "ts": 1795096964333,
+      "ts": 1795096958026,
       "latencyMs": 2717
     },
     {
       "cardId": "reparer-pc",
       "direction": "right",
       "reason": "deja-souvent",
-      "ts": 1795096972303,
+      "ts": 1795096965996,
       "latencyMs": 3110
-    },
-    {
-      "cardId": "gen-creuser-300178-reparer-pc",
-      "direction": "right",
-      "ts": 1795096977816,
-      "latencyMs": 3099
     },
     {
       "cardId": "monter-meuble",
       "direction": "right",
       "reason": "deja-une-fois",
-      "ts": 1795096981977,
+      "ts": 1795096970157,
       "latencyMs": 3503
     },
     {
-      "cardId": "gen-creuser-300135-monter-meuble",
+      "cardId": "gen-explorer-300371",
       "direction": "right",
-      "ts": 1795096988681,
-      "latencyMs": 3492
+      "reason": "jamais-fait-mais-tente",
+      "ts": 1795096976700,
+      "latencyMs": 4289
     },
     {
       "cardId": "vendre-vinted",
       "direction": "left",
       "reason": "pas-mon-truc",
-      "ts": 1795096992842,
+      "ts": 1795096980861,
       "latencyMs": 3503
     },
     {
       "cardId": "installer-reseau",
       "direction": "right",
       "reason": "jamais-fait-mais-tente",
-      "ts": 1795096998194,
+      "ts": 1795096986213,
       "latencyMs": 3896
     },
     {
       "cardId": "gen-explorer-300228",
       "direction": "right",
-      "reason": "jamais-fait-mais-tente",
-      "ts": 1795097004737,
+      "reason": "deja-une-fois",
+      "ts": 1795096992756,
       "latencyMs": 4289
     },
     {
       "cardId": "conduire-camion",
       "direction": "left",
       "reason": "pas-les-moyens",
-      "ts": 1795097009692,
+      "ts": 1795096997711,
       "latencyMs": 3765
     },
     {
       "cardId": "potager",
       "direction": "right",
       "reason": "deja-une-fois",
-      "ts": 1795097016471,
+      "ts": 1795097004490,
       "latencyMs": 2717
     },
     {
-      "cardId": "gen-creuser-300294-potager",
+      "cardId": "gen-explorer-300185",
       "direction": "right",
-      "ts": 1795097020793,
-      "latencyMs": 2706
+      "reason": "jamais-fait-mais-tente",
+      "ts": 1795097011033,
+      "latencyMs": 4289
     },
     {
       "cardId": "aider-personne-agee",
       "direction": "left",
       "reason": "pas-mon-truc",
-      "ts": 1795097027336,
+      "ts": 1795097017576,
       "latencyMs": 4289
     },
     {
       "cardId": "robot",
       "direction": "right",
       "reason": "jamais-fait-mais-tente",
-      "ts": 1795097033321,
+      "ts": 1795097023561,
       "latencyMs": 2455
     },
     {
       "cardId": "accueillir-evenement",
       "direction": "left",
       "reason": "pas-mon-truc",
-      "ts": 1795097040261,
+      "ts": 1795097030501,
       "latencyMs": 1920
     },
     {
       "cardId": "planning",
       "direction": "right",
       "reason": "deja-une-fois",
-      "ts": 1795097047437,
+      "ts": 1795097037677,
       "latencyMs": 2848
-    },
-    {
-      "cardId": "gen-creuser-300464-planning",
-      "direction": "right",
-      "ts": 1795097052156,
-      "latencyMs": 2837
     },
     {
       "cardId": "peindre-mur",
       "direction": "right",
       "reason": "deja-souvent",
-      "ts": 1795097060523,
+      "ts": 1795097046044,
       "latencyMs": 3241
     },
     {
       "cardId": "caisse-asso",
       "direction": "left",
       "reason": "jamais-essaye",
-      "ts": 1795097068890,
+      "ts": 1795097054411,
       "latencyMs": 3241
     },
     {
       "cardId": "demonter-telephone",
       "direction": "right",
       "reason": "deja-souvent",
-      "ts": 1795097075036,
+      "ts": 1795097060557,
       "latencyMs": 4158
     }
   ],
   "generated": [
-    {
-      "id": "gen-creuser-300182-reparer-velo",
-      "text": "Sur le vélo crevé, t'as cherché toi-même où était le trou ?",
-      "hint": "Même avec une bassine d'eau",
-      "emoji": "🔧",
-      "centers": {
-        "manual": 0.63,
-        "creation": 0.38
-      },
-      "tags": [
-        "adaptatif",
-        "creuser"
-      ],
-      "source": "generated",
-      "target": {
-        "mode": "creuser",
-        "macro": 300182,
-        "label": "Réparer un équipement, une machine, une installation",
-        "center": "manual",
-        "parentId": "reparer-velo"
-      }
-    },
     {
       "id": "gen-explorer-300260",
       "text": "Tenir le stock d'une épicerie solidaire",
@@ -209,49 +171,23 @@
       }
     },
     {
-      "id": "gen-creuser-300178-reparer-pc",
-      "text": "Sur l'ordi qui démarrait plus, t'as testé plusieurs solutions jusqu'à ce que ça marche ?",
-      "hint": "Même si ça a pris toute l'aprem",
-      "emoji": "💻",
+      "id": "gen-explorer-300371",
+      "text": "Trouver des clients pour une vente de gâteaux",
+      "hint": "Même juste en faisant passer le mot",
+      "emoji": "🧁",
       "centers": {
-        "tech": 0.4,
-        "manual": 0.39,
-        "backstage": 0.21
+        "business": 1
       },
       "tags": [
         "adaptatif",
-        "creuser"
+        "explorer"
       ],
       "source": "generated",
       "target": {
-        "mode": "creuser",
-        "macro": 300178,
-        "label": "Réaliser des corrections ou réparations sur un ouvrage",
-        "center": "tech",
-        "parentId": "reparer-pc"
-      }
-    },
-    {
-      "id": "gen-creuser-300135-monter-meuble",
-      "text": "En montant le meuble, c'est toi qui réglais portes et tiroirs ?",
-      "hint": "Pour que tout tombe droit",
-      "emoji": "🪛",
-      "centers": {
-        "manual": 0.66,
-        "organize": 0.15,
-        "nature": 0.19
-      },
-      "tags": [
-        "adaptatif",
-        "creuser"
-      ],
-      "source": "generated",
-      "target": {
-        "mode": "creuser",
-        "macro": 300135,
-        "label": "Monter et régler une installation, une machine",
-        "center": "manual",
-        "parentId": "monter-meuble"
+        "mode": "explorer",
+        "macro": 300371,
+        "label": "Prospecter de nouveaux clients, de nouveaux marchés",
+        "center": "business"
       }
     },
     {
@@ -277,49 +213,23 @@
       }
     },
     {
-      "id": "gen-creuser-300294-potager",
-      "text": "Au potager, c'est toi qui savais quand les légumes étaient prêts ?",
-      "hint": "Même pour une seule récolte",
-      "emoji": "🥕",
+      "id": "gen-explorer-300185",
+      "text": "Trouver pourquoi une machine à laver fait du bruit",
+      "hint": "Même sans la réparer",
+      "emoji": "🔍",
       "centers": {
-        "nature": 0.61,
-        "manual": 0.26,
-        "physical": 0.14
+        "manual": 1
       },
       "tags": [
         "adaptatif",
-        "creuser"
+        "explorer"
       ],
       "source": "generated",
       "target": {
-        "mode": "creuser",
-        "macro": 300294,
-        "label": "Cultiver et récolter des végétaux/minéraux",
-        "center": "nature",
-        "parentId": "potager"
-      }
-    },
-    {
-      "id": "gen-creuser-300464-planning",
-      "text": "En faisant le planning de 10 personnes, c'est toi qui gérais les désistements ?",
-      "hint": "Même un seul absent",
-      "emoji": "📅",
-      "centers": {
-        "organize": 0.4,
-        "detail": 0.1,
-        "leadership": 0.5
-      },
-      "tags": [
-        "adaptatif",
-        "creuser"
-      ],
-      "source": "generated",
-      "target": {
-        "mode": "creuser",
-        "macro": 300464,
-        "label": "Gérer un planning",
-        "center": "organize",
-        "parentId": "planning"
+        "mode": "explorer",
+        "macro": 300185,
+        "label": "Réaliser un diagnostic technique",
+        "center": "manual"
       }
     }
   ],
@@ -400,23 +310,267 @@
       "ts": 14
     }
   ],
+  "confirmations": [
+    {
+      "centerId": "manual",
+      "accepted": true,
+      "ts": 1795097000557
+    },
+    {
+      "centerId": "care",
+      "accepted": false,
+      "ts": 1795097030557
+    }
+  ],
+  "skillMatches": [
+    {
+      "cardId": "reparer-velo",
+      "text": "Réparer un vélo crevé",
+      "emoji": "🚲",
+      "reason": "deja-souvent",
+      "centers": {
+        "manual": 0.8,
+        "creation": 0.2
+      },
+      "skill": {
+        "code": 300182,
+        "label": "Réparer un équipement, une machine, une installation"
+      },
+      "skillStatus": "found",
+      "at": 1795096928764,
+      "seen": true
+    },
+    {
+      "cardId": "bricoler",
+      "text": "Bricoler un truc qui ne marche plus",
+      "emoji": "🔧",
+      "reason": "deja-une-fois",
+      "centers": {
+        "manual": 0.75,
+        "detail": 0.25
+      },
+      "skill": {
+        "code": 300185,
+        "label": "Réaliser un diagnostic technique"
+      },
+      "skillStatus": "found",
+      "at": 1795096944704,
+      "seen": true
+    },
+    {
+      "cardId": "reparer-pc",
+      "text": "Réparer un ordinateur qui ne démarre plus",
+      "emoji": "🖥️",
+      "reason": "deja-souvent",
+      "centers": {
+        "tech": 0.8,
+        "manual": 0.2
+      },
+      "skill": {
+        "code": 300182,
+        "label": "Réparer un équipement, une machine, une installation"
+      },
+      "skillStatus": "found",
+      "at": 1795096965996,
+      "seen": true
+    },
+    {
+      "cardId": "monter-meuble",
+      "text": "Monter un meuble sans la notice",
+      "emoji": "🪑",
+      "reason": "deja-une-fois",
+      "centers": {
+        "manual": 0.7,
+        "organize": 0.3
+      },
+      "skill": {
+        "code": 300135,
+        "label": "Monter et régler une installation, une machine"
+      },
+      "skillStatus": "found",
+      "at": 1795096970157,
+      "seen": true
+    },
+    {
+      "cardId": "gen-explorer-300228",
+      "text": "Poser des étagères dans un local d'asso",
+      "emoji": "🧰",
+      "reason": "deja-une-fois",
+      "centers": {
+        "manual": 0.7,
+        "creation": 0.18,
+        "physical": 0.13
+      },
+      "skill": {
+        "code": 300228,
+        "label": "Fixer, poser, installer des éléments, des ouvrages"
+      },
+      "skillStatus": "found",
+      "at": 1795096992756,
+      "seen": true
+    },
+    {
+      "cardId": "potager",
+      "text": "Planter et entretenir un potager",
+      "emoji": "🥕",
+      "reason": "deja-une-fois",
+      "centers": {
+        "nature": 0.7,
+        "manual": 0.3
+      },
+      "skill": {
+        "code": 300294,
+        "label": "Cultiver et récolter des végétaux/minéraux"
+      },
+      "skillStatus": "found",
+      "at": 1795097004490,
+      "seen": true
+    },
+    {
+      "cardId": "planning",
+      "text": "Faire le planning de 10 personnes",
+      "emoji": "🗓️",
+      "reason": "deja-une-fois",
+      "centers": {
+        "organize": 0.8,
+        "detail": 0.2
+      },
+      "skill": {
+        "code": 300464,
+        "label": "Gérer un planning"
+      },
+      "skillStatus": "found",
+      "at": 1795097037677,
+      "seen": true
+    },
+    {
+      "cardId": "peindre-mur",
+      "text": "Peindre un mur ou une fresque",
+      "emoji": "🖌️",
+      "reason": "deja-souvent",
+      "centers": {
+        "creation": 0.5,
+        "manual": 0.5
+      },
+      "skillStatus": "none",
+      "at": 1795097046044,
+      "seen": true
+    },
+    {
+      "cardId": "demonter-telephone",
+      "text": "Démonter un vieux téléphone pour voir dedans",
+      "emoji": "📱",
+      "reason": "deja-souvent",
+      "centers": {
+        "tech": 0.7,
+        "discovery": 0.3
+      },
+      "skillStatus": "none",
+      "at": 1795097060557,
+      "seen": true
+    }
+  ],
+  "jobs": {
+    "list": [
+      {
+        "code": "I1619",
+        "label": "Mécanicien / Mécanicienne cycles",
+        "level": null,
+        "definition": "Le mécanicien cycles entretient, répare et assemble des vélos et autres cycles.",
+        "pitch": "Tu répares déjà un vélo crevé : c'est le cœur du quotidien d'un mécanicien cycles, entretenir, réparer et assembler des vélos.",
+        "cardIds": [
+          "reparer-velo"
+        ],
+        "skills": [],
+        "source": "generated"
+      },
+      {
+        "code": "I1407",
+        "label": "Réparateur / Réparatrice en produits de télécommunication et multimédia",
+        "level": 3,
+        "definition": "Le réparateur en produits de télécommunication et multimédia est un professionnel de la réparation d'équipements électroniques et télécommunication.",
+        "pitch": "Tu as réparé un ordinateur et démonté un vieux téléphone pour voir dedans : c'est ce que fait un réparateur de produits multimédia.",
+        "cardIds": [
+          "reparer-pc",
+          "demonter-telephone"
+        ],
+        "skills": [
+          "Réaliser un diagnostic technique"
+        ],
+        "source": "generated"
+      },
+      {
+        "code": "H2220",
+        "label": "Agent / Agente de montage en ameublement",
+        "level": 2,
+        "definition": "L'Agent de montage en ameublement assemble toutes les parties constitutives d'un meuble ainsi que les éléments auxiliaires, tels que les pieds et coussins.",
+        "pitch": "Tu as déjà monté un meuble sans notice : un agent de montage en ameublement assemble des meubles toute la journée.",
+        "cardIds": [
+          "monter-meuble"
+        ],
+        "skills": [
+          "Fixer, poser, installer des éléments, des ouvrages"
+        ],
+        "source": "generated"
+      },
+      {
+        "code": "A1440",
+        "label": "Cultivateur urbain / Cultivatrice urbaine",
+        "level": null,
+        "definition": "Le cultivateur urbain cultive des plantes, des fruits et des légumes en milieu urbain et péri-urbain en utilisant des techniques adaptées à l'espace disponible et contribue ainsi au verdissement des villes.",
+        "pitch": "Tu plantes et entretiens déjà un potager : un cultivateur urbain fait pareil, en ville, pour verdir les quartiers.",
+        "cardIds": [
+          "potager"
+        ],
+        "skills": [
+          "Monter et régler une installation, une machine",
+          "Cultiver et récolter des végétaux/minéraux"
+        ],
+        "source": "generated"
+      },
+      {
+        "code": "I1310",
+        "label": "Mécanicien / Mécanicienne de maintenance industrielle",
+        "level": 0,
+        "definition": "Le Mécanicien de maintenance industrielle réalise l'entretien, la maintenance, la mise à niveau ou la rénovation mécanique des matériels, équipements et installations de production ou d'exploitation industrielles, selon…",
+        "pitch": "Tu cherches pourquoi un truc ne marche plus et tu le répares : un mécanicien de maintenance fait ça sur des machines.",
+        "cardIds": [
+          "bricoler",
+          "reparer-velo"
+        ],
+        "skills": [
+          "Réparer un équipement, une machine, une installation"
+        ],
+        "source": "generated"
+      }
+    ]
+  },
   "interviews": [
     {
-      "cardId": "gen-creuser-300182-reparer-velo",
-      "parentId": "reparer-velo",
-      "parentText": "Réparer un vélo crevé",
-      "proofText": "Sur le vélo crevé, t'as cherché toi-même où était le trou ?",
-      "macro": 300182,
-      "skill": "Réparer un équipement, une machine, une installation",
+      "id": "job:I1619",
+      "job": {
+        "code": "I1619",
+        "label": "Mécanicien / Mécanicienne cycles"
+      },
+      "experiences": [
+        {
+          "cardId": "reparer-velo",
+          "text": "Réparer un vélo crevé",
+          "skill": {
+            "code": 300182,
+            "label": "Réparer un équipement, une machine, une installation"
+          }
+        }
+      ],
       "questions": [
-        "Raconte-moi la fois où t'as réparé ce vélo crevé : c'était où, et dans quel cadre ?",
-        "Comment t'as trouvé d'où venait la panne, et qu'est-ce que t'as fait ensuite, étape par étape ?",
-        "Une fois le vélo réparé, qu'est-ce que ça a donné, et qu'est-ce qu'on t'a dit ?"
+        "Raconte-moi la fois où tu as réparé un vélo crevé : c'était quand, où, et c'était le vélo de qui ?",
+        "Comment tu t'y es pris, concrètement, pour réparer ce vélo crevé ? Raconte-moi étape par étape ce que tu as fait.",
+        "Une fois le vélo réparé, qu'est-ce que ça a donné ? Est-ce que quelqu'un t'a fait un retour sur ton travail ?"
       ],
       "questionSource": "generated",
       "answers": [
-        "L'été dernier, en bas de chez moi. Les vélos des potes du quartier, je les répare souvent, genre un ou deux par mois.",
-        "J'ai démonté la roue, mis la chambre à air dans une bassine d'eau pour voir les bulles, posé une rustine, remonté et regonflé.",
+        "L'été dernier, en bas de chez moi. C'était le vélo d'un pote du quartier, et depuis je répare ceux des autres, genre un ou deux par mois.",
+        "J'ai démonté la roue, mis la chambre à air dans une bassine d'eau pour voir les bulles, posé une rustine, remonté et regonflé. Le pneu était trop serré, j'ai utilisé deux cuillères comme démonte-pneus.",
         "Il roulait nickel. Depuis, les gens du quartier viennent me voir quand leur vélo a un problème."
       ],
       "cvFields": [
@@ -425,26 +579,39 @@
         "studiesLevel"
       ],
       "step": 5,
-      "startedAt": 1795096990000,
-      "finishedAt": 1795097140000
+      "startedAt": 1795097120557,
+      "finishedAt": 1795097270557
     },
     {
-      "cardId": "gen-creuser-300464-planning",
-      "parentId": "planning",
-      "parentText": "Faire le planning de 10 personnes",
-      "proofText": "En faisant le planning de 10 personnes, c'est toi qui gérais les désistements ?",
-      "macro": 300464,
-      "skill": "Gérer un planning",
+      "id": "job:I1407",
+      "job": {
+        "code": "I1407",
+        "label": "Réparateur / Réparatrice en produits de télécommunication et multimédia"
+      },
+      "experiences": [
+        {
+          "cardId": "reparer-pc",
+          "text": "Réparer un ordinateur qui ne démarre plus",
+          "skill": {
+            "code": 300182,
+            "label": "Réparer un équipement, une machine, une installation"
+          }
+        },
+        {
+          "cardId": "demonter-telephone",
+          "text": "Démonter un vieux téléphone pour voir dedans"
+        }
+      ],
       "questions": [
-        "Ce planning de 10 personnes, c'était dans quel cadre, et c'était pour organiser quoi ?",
-        "Raconte-moi comment tu t'y prenais, étape par étape, quand quelqu'un se désistait au dernier moment.",
-        "Au final, qu'est-ce que ton planning a permis, et qu'est-ce que les gens t'en ont dit ?"
+        "Raconte-moi la fois où tu as réparé l'ordinateur qui ne démarrait plus : c'était quand, où, et c'était à qui ?",
+        "Dans cet ordi qui ne démarrait plus, qu'est-ce que tu as fait toi, étape par étape, du début jusqu'à la fin ?",
+        "Au final, qu'est-ce que ça a donné pour cet ordinateur, et qu'est-ce qu'on t'a dit une fois qu'il remarchait ?"
       ],
       "questionSource": "generated",
       "answers": [
-        "Pour la buvette du club de foot, les week-ends de match, pendant une saison.",
+        "Cet hiver, chez moi. C'était l'ordi portable de ma voisine.",
         "",
-        "Il y a toujours eu quelqu'un à la buvette. Le président m'a demandé de le refaire la saison d'après."
+        "Il a redémarré, elle a récupéré ses photos. Elle en a parlé à d'autres voisins, j'en ai réparé deux autres depuis."
       ],
       "cvFields": [
         "currentStatus",
@@ -452,8 +619,8 @@
         "age"
       ],
       "step": 5,
-      "startedAt": 1795097260000,
-      "finishedAt": 1795097410000
+      "startedAt": 1795097320557,
+      "finishedAt": 1795097470557
     }
   ],
   "cv": {
@@ -464,21 +631,5 @@
     "experience": "Deux étés au marché, à aider sur un stand de fruits et légumes.",
     "age": "19"
   },
-  "cvSkipped": [],
-  "matchedSkills": [
-    "gen-creuser-300182-reparer-velo",
-    "gen-creuser-300464-planning"
-  ],
-  "confirmations": [
-    {
-      "centerId": "manual",
-      "accepted": true,
-      "ts": 1795097015036
-    },
-    {
-      "centerId": "care",
-      "accepted": false,
-      "ts": 1795097045036
-    }
-  ]
+  "cvSkipped": []
 }

@@ -6,12 +6,12 @@
   "profile": {
     "code": "RIC",
     "theta": {
-      "R": 0.4227433094266944,
-      "I": 0.1912659155835428,
-      "A": 0.06647198246824697,
-      "S": 0.0857599502914803,
-      "E": 0.0832079818966457,
-      "C": 0.14860216248843983
+      "R": 0.4112774642015702,
+      "I": 0.18556765020685143,
+      "A": 0.06487541854971042,
+      "S": 0.08320495791888863,
+      "E": 0.10058081337529655,
+      "C": 0.1526030542345453
     },
     "confirmed": [
       "manual"
@@ -21,14 +21,14 @@
     ],
     "domains": {
       "creation": {
-        "alpha": 2.053,
+        "alpha": 2.0709999999999997,
         "beta": 1.2,
-        "nEff": 0.853,
-        "mean": 0.6311097448509068,
-        "sd": 0.2339663193907354,
-        "lower80": 0.3316328560307655,
-        "upper80": 0.930586633671048,
-        "confidence": 0.16440600217594514,
+        "nEff": 0.871,
+        "mean": 0.6331397126261081,
+        "sd": 0.23320364952077768,
+        "lower80": 0.3346390412395127,
+        "upper80": 0.9316403840127035,
+        "confidence": 0.16712982314007974,
         "confirmed": false,
         "rejected": false,
         "likedCards": [
@@ -55,17 +55,19 @@
         "dislikedCards": []
       },
       "business": {
-        "alpha": 1.2,
+        "alpha": 2.05,
         "beta": 1.8599999999999999,
-        "nEff": 0.66,
-        "mean": 0.3921568627450981,
-        "sd": 0.2423051539328432,
-        "lower80": 0.08200626571105879,
-        "upper80": 0.7023074597791374,
-        "confidence": 0.13462445023984582,
+        "nEff": 1.51,
+        "mean": 0.5242966751918159,
+        "sd": 0.22538027225811316,
+        "lower80": 0.23580992670143103,
+        "upper80": 0.8127834236822007,
+        "confidence": 0.19507045622102448,
         "confirmed": false,
         "rejected": false,
-        "likedCards": [],
+        "likedCards": [
+          "gen-explorer-300371"
+        ],
         "dislikedCards": [
           "vendre-vinted"
         ]
@@ -211,14 +213,14 @@
         ]
       },
       "physical": {
-        "alpha": 1.3105,
+        "alpha": 1.3235,
         "beta": 1.2,
-        "nEff": 0.1105,
-        "mean": 0.5220075682135032,
-        "sd": 0.2666026250351602,
-        "lower80": 0.1807562081684982,
-        "upper80": 0.8632589282585084,
-        "confidence": 0.047847767731570845,
+        "nEff": 0.1235,
+        "mean": 0.5244699821676243,
+        "sd": 0.2660493173135417,
+        "lower80": 0.18392685600629094,
+        "upper80": 0.8650131083289576,
+        "confidence": 0.049823866737351175,
         "confirmed": false,
         "rejected": false,
         "likedCards": [
@@ -245,6 +247,7 @@
           "monter-meuble",
           "gen-explorer-300228",
           "potager",
+          "gen-explorer-300185",
           "robot",
           "peindre-mur"
         ],
@@ -536,21 +539,31 @@
     "experience": [
       {
         "title": "Réparer un vélo crevé",
-        "description": "Raconte-moi la fois où t'as réparé ce vélo crevé : c'était où, et dans quel cadre ? — L'été dernier, en bas de chez moi. Les vélos des potes du quartier, je les répare souvent, genre un ou deux par mois.\nComment t'as trouvé d'où venait la panne, et qu'est-ce que t'as fait ensuite, étape par étape ? — J'ai démonté la roue, mis la chambre à air dans une bassine d'eau pour voir les bulles, posé une rustine, remonté et regonflé.\nUne fois le vélo réparé, qu'est-ce que ça a donné, et qu'est-ce qu'on t'a dit ? — Il roulait nickel. Depuis, les gens du quartier viennent me voir quand leur vélo a un problème.",
+        "description": "Raconte-moi la fois où tu as réparé un vélo crevé : c'était quand, où, et c'était le vélo de qui ? — L'été dernier, en bas de chez moi. C'était le vélo d'un pote du quartier, et depuis je répare ceux des autres, genre un ou deux par mois.\nComment tu t'y es pris, concrètement, pour réparer ce vélo crevé ? Raconte-moi étape par étape ce que tu as fait. — J'ai démonté la roue, mis la chambre à air dans une bassine d'eau pour voir les bulles, posé une rustine, remonté et regonflé. Le pneu était trop serré, j'ai utilisé deux cuillères comme démonte-pneus.\nUne fois le vélo réparé, qu'est-ce que ça a donné ? Est-ce que quelqu'un t'a fait un retour sur ton travail ? — Il roulait nickel. Depuis, les gens du quartier viennent me voir quand leur vélo a un problème.",
         "competences": [
           "Réparer un équipement, une machine, une installation"
         ]
       },
       {
-        "title": "Faire le planning de 10 personnes",
-        "description": "Ce planning de 10 personnes, c'était dans quel cadre, et c'était pour organiser quoi ? — Pour la buvette du club de foot, les week-ends de match, pendant une saison.\nAu final, qu'est-ce que ton planning a permis, et qu'est-ce que les gens t'en ont dit ? — Il y a toujours eu quelqu'un à la buvette. Le président m'a demandé de le refaire la saison d'après.",
+        "title": "Réparer un ordinateur qui ne démarre plus · Démonter un vieux téléphone pour voir dedans",
+        "description": "Raconte-moi la fois où tu as réparé l'ordinateur qui ne démarrait plus : c'était quand, où, et c'était à qui ? — Cet hiver, chez moi. C'était l'ordi portable de ma voisine.\nAu final, qu'est-ce que ça a donné pour cet ordinateur, et qu'est-ce qu'on t'a dit une fois qu'il remarchait ? — Il a redémarré, elle a récupéré ses photos. Elle en a parlé à d'autres voisins, j'en ai réparé deux autres depuis.",
         "competences": [
-          "Gérer un planning"
+          "Réparer un équipement, une machine, une installation"
         ]
       },
       {
         "title": "Petits boulots, stages, bénévolat (déclaré)",
         "description": "Deux étés au marché, à aider sur un stand de fruits et légumes."
+      }
+    ],
+    "targetJobs": [
+      {
+        "code": "I1619",
+        "label": "Mécanicien / Mécanicienne cycles"
+      },
+      {
+        "code": "I1407",
+        "label": "Réparateur / Réparatrice en produits de télécommunication et multimédia"
       }
     ],
     "raw": {
@@ -562,55 +575,137 @@
       "age": "19"
     }
   },
-  "interviews": [
+  "skillMatches": [
     {
+      "card": "Réparer un vélo crevé",
+      "reason": "deja-souvent",
       "skill": {
         "code": 300182,
         "label": "Réparer un équipement, une machine, une installation"
+      }
+    },
+    {
+      "card": "Bricoler un truc qui ne marche plus",
+      "reason": "deja-une-fois",
+      "skill": {
+        "code": 300185,
+        "label": "Réaliser un diagnostic technique"
+      }
+    },
+    {
+      "card": "Réparer un ordinateur qui ne démarre plus",
+      "reason": "deja-souvent",
+      "skill": {
+        "code": 300182,
+        "label": "Réparer un équipement, une machine, une installation"
+      }
+    },
+    {
+      "card": "Monter un meuble sans la notice",
+      "reason": "deja-une-fois",
+      "skill": {
+        "code": 300135,
+        "label": "Monter et régler une installation, une machine"
+      }
+    },
+    {
+      "card": "Poser des étagères dans un local d'asso",
+      "reason": "deja-une-fois",
+      "skill": {
+        "code": 300228,
+        "label": "Fixer, poser, installer des éléments, des ouvrages"
+      }
+    },
+    {
+      "card": "Planter et entretenir un potager",
+      "reason": "deja-une-fois",
+      "skill": {
+        "code": 300294,
+        "label": "Cultiver et récolter des végétaux/minéraux"
+      }
+    },
+    {
+      "card": "Faire le planning de 10 personnes",
+      "reason": "deja-une-fois",
+      "skill": {
+        "code": 300464,
+        "label": "Gérer un planning"
+      }
+    },
+    {
+      "card": "Peindre un mur ou une fresque",
+      "reason": "deja-souvent",
+      "skill": null
+    },
+    {
+      "card": "Démonter un vieux téléphone pour voir dedans",
+      "reason": "deja-souvent",
+      "skill": null
+    }
+  ],
+  "interviews": [
+    {
+      "job": {
+        "code": "I1619",
+        "label": "Mécanicien / Mécanicienne cycles"
       },
-      "proof": {
-        "parent": "Réparer un vélo crevé",
-        "question": "Sur le vélo crevé, t'as cherché toi-même où était le trou ?"
-      },
+      "experiences": [
+        {
+          "card": "Réparer un vélo crevé",
+          "skill": {
+            "code": 300182,
+            "label": "Réparer un équipement, une machine, une installation"
+          }
+        }
+      ],
       "questionSource": "generated",
       "qa": [
         {
-          "question": "Raconte-moi la fois où t'as réparé ce vélo crevé : c'était où, et dans quel cadre ?",
-          "answer": "L'été dernier, en bas de chez moi. Les vélos des potes du quartier, je les répare souvent, genre un ou deux par mois."
+          "question": "Raconte-moi la fois où tu as réparé un vélo crevé : c'était quand, où, et c'était le vélo de qui ?",
+          "answer": "L'été dernier, en bas de chez moi. C'était le vélo d'un pote du quartier, et depuis je répare ceux des autres, genre un ou deux par mois."
         },
         {
-          "question": "Comment t'as trouvé d'où venait la panne, et qu'est-ce que t'as fait ensuite, étape par étape ?",
-          "answer": "J'ai démonté la roue, mis la chambre à air dans une bassine d'eau pour voir les bulles, posé une rustine, remonté et regonflé."
+          "question": "Comment tu t'y es pris, concrètement, pour réparer ce vélo crevé ? Raconte-moi étape par étape ce que tu as fait.",
+          "answer": "J'ai démonté la roue, mis la chambre à air dans une bassine d'eau pour voir les bulles, posé une rustine, remonté et regonflé. Le pneu était trop serré, j'ai utilisé deux cuillères comme démonte-pneus."
         },
         {
-          "question": "Une fois le vélo réparé, qu'est-ce que ça a donné, et qu'est-ce qu'on t'a dit ?",
+          "question": "Une fois le vélo réparé, qu'est-ce que ça a donné ? Est-ce que quelqu'un t'a fait un retour sur ton travail ?",
           "answer": "Il roulait nickel. Depuis, les gens du quartier viennent me voir quand leur vélo a un problème."
         }
       ],
       "finished": true
     },
     {
-      "skill": {
-        "code": 300464,
-        "label": "Gérer un planning"
+      "job": {
+        "code": "I1407",
+        "label": "Réparateur / Réparatrice en produits de télécommunication et multimédia"
       },
-      "proof": {
-        "parent": "Faire le planning de 10 personnes",
-        "question": "En faisant le planning de 10 personnes, c'est toi qui gérais les désistements ?"
-      },
+      "experiences": [
+        {
+          "card": "Réparer un ordinateur qui ne démarre plus",
+          "skill": {
+            "code": 300182,
+            "label": "Réparer un équipement, une machine, une installation"
+          }
+        },
+        {
+          "card": "Démonter un vieux téléphone pour voir dedans",
+          "skill": null
+        }
+      ],
       "questionSource": "generated",
       "qa": [
         {
-          "question": "Ce planning de 10 personnes, c'était dans quel cadre, et c'était pour organiser quoi ?",
-          "answer": "Pour la buvette du club de foot, les week-ends de match, pendant une saison."
+          "question": "Raconte-moi la fois où tu as réparé l'ordinateur qui ne démarrait plus : c'était quand, où, et c'était à qui ?",
+          "answer": "Cet hiver, chez moi. C'était l'ordi portable de ma voisine."
         },
         {
-          "question": "Raconte-moi comment tu t'y prenais, étape par étape, quand quelqu'un se désistait au dernier moment.",
+          "question": "Dans cet ordi qui ne démarrait plus, qu'est-ce que tu as fait toi, étape par étape, du début jusqu'à la fin ?",
           "answer": ""
         },
         {
-          "question": "Au final, qu'est-ce que ton planning a permis, et qu'est-ce que les gens t'en ont dit ?",
-          "answer": "Il y a toujours eu quelqu'un à la buvette. Le président m'a demandé de le refaire la saison d'après."
+          "question": "Au final, qu'est-ce que ça a donné pour cet ordinateur, et qu'est-ce qu'on t'a dit une fois qu'il remarchait ?",
+          "answer": "Il a redémarré, elle a récupéré ses photos. Elle en a parlé à d'autres voisins, j'en ai réparé deux autres depuis."
         }
       ],
       "finished": true
@@ -624,8 +719,8 @@
         {
           "code": "H2911",
           "label": "Métallier / Métallière",
-          "score": 0.772,
-          "interest": 0.886,
+          "score": 0.77,
+          "interest": 0.884,
           "context": 0.53,
           "evidence": [
             "Réparer un vélo crevé",
@@ -639,8 +734,8 @@
         {
           "code": "H3203",
           "label": "Mouleur-stratifieur / Mouleuse-stratifieuse",
-          "score": 0.772,
-          "interest": 0.886,
+          "score": 0.77,
+          "interest": 0.884,
           "context": 0.53,
           "evidence": [
             "Réparer un vélo crevé",
@@ -655,8 +750,8 @@
         {
           "code": "H3302",
           "label": "Agent / Agente de conditionnement",
-          "score": 0.743,
-          "interest": 0.886,
+          "score": 0.742,
+          "interest": 0.884,
           "context": 0.44,
           "evidence": [
             "Réparer un vélo crevé",
@@ -671,8 +766,8 @@
         {
           "code": "H2905",
           "label": "Cisailleur / Cisailleuse en métallurgie",
-          "score": 0.74,
-          "interest": 0.886,
+          "score": 0.738,
+          "interest": 0.884,
           "context": 0.43,
           "evidence": [
             "Réparer un vélo crevé",
@@ -693,8 +788,8 @@
         {
           "code": "I1209",
           "label": "Technicien / Technicienne d'installation de panneau digital",
-          "score": 0.612,
-          "interest": 0.637,
+          "score": 0.611,
+          "interest": 0.636,
           "context": 0.56,
           "evidence": [
             "Réparer un ordinateur qui ne démarre plus",
@@ -708,8 +803,8 @@
         {
           "code": "I1409",
           "label": "Agent / Agente de maintenance en bureautique",
-          "score": 0.553,
-          "interest": 0.588,
+          "score": 0.552,
+          "interest": 0.586,
           "context": 0.48,
           "evidence": [
             "Réparer un ordinateur qui ne démarre plus",
@@ -724,8 +819,8 @@
         {
           "code": "M1810",
           "label": "Technicien / Technicienne d'exploitation informatique",
-          "score": 0.424,
-          "interest": 0.341,
+          "score": 0.423,
+          "interest": 0.34,
           "context": 0.6,
           "evidence": [
             "Réparer un ordinateur qui ne démarre plus",
@@ -737,8 +832,8 @@
         {
           "code": "M1834",
           "label": "Administrateur / Administratrice de site internet",
-          "score": 0.363,
-          "interest": 0.341,
+          "score": 0.362,
+          "interest": 0.34,
           "context": 0.41,
           "evidence": [
             "Réparer un ordinateur qui ne démarre plus",
@@ -759,8 +854,8 @@
         {
           "code": "H1240",
           "label": "Agent / Agente de finissage couleurs et effets cuirs et peaux",
-          "score": 0.735,
-          "interest": 0.827,
+          "score": 0.734,
+          "interest": 0.826,
           "context": 0.54,
           "evidence": [
             "Réparer un vélo crevé",
@@ -776,7 +871,7 @@
           "code": "F1505",
           "label": "Echafaudeur / Echafaudeuse",
           "score": 0.545,
-          "interest": 0.519,
+          "interest": 0.52,
           "context": 0.6,
           "evidence": [
             "Réparer un vélo crevé",

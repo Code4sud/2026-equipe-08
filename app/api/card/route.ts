@@ -86,7 +86,8 @@ export async function POST(request: Request) {
   const profile = computeProfile(responses, [], cards);
 
   const backend = llmBackend();
-  let plan = pickTarget({ profile, responses, cards, allowLoose: backend !== "mock" });
+  // Pas de carte « creuser » : un « déjà fait » donne directement un skill match.
+  let plan = pickTarget({ profile, responses, cards, allowLoose: backend !== "mock", allowCreuser: false });
   if (!plan) return Response.json({ card: null, backend });
 
   // Contexte pour le LLM : uniquement des textes de cartes (pas de texte libre).
@@ -129,7 +130,7 @@ export async function POST(request: Request) {
 
   // LLM en échec sur une short-list floue : on ne devine pas, on explore.
   if (written.source === "template" && plan.loose) {
-    plan = pickTarget({ profile, responses, cards, allowLoose: false });
+    plan = pickTarget({ profile, responses, cards, allowLoose: false, allowCreuser: false });
     if (!plan) return Response.json({ card: null, backend });
     written = { macro: plan.candidates[0], draft: templateDraft(plan, plan.candidates[0]), source: "template" };
   }

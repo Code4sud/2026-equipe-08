@@ -140,6 +140,7 @@ export function pickTarget({
   cards,
   rand = Math.random,
   allowLoose = true,
+  allowCreuser = true,
 }: {
   profile: Profile;
   responses: Response[];
@@ -148,10 +149,15 @@ export function pickTarget({
   rand?: () => number;
   /** false quand aucun LLM ne pourra choisir dans une short-list floue. */
   allowLoose?: boolean;
+  /**
+   * false : pas de carte « creuser » dans le swipe. Depuis le 19/11/2026, un
+   * « déjà fait » donne directement un skill match (voir lib/matches.ts).
+   */
+  allowCreuser?: boolean;
 }): TargetPlan | null {
   const cov = coverage(responses, cards);
 
-  if (cov.creuserCount < MAX_CREUSER) {
+  if (allowCreuser && cov.creuserCount < MAX_CREUSER) {
     for (const parent of cov.aCreuser) {
       const plan = creuserPlan(parent, cov, cards, allowLoose);
       if (plan) return plan;

@@ -30,6 +30,7 @@ export default function ResultPage() {
   const responses = useSession((s) => s.responses);
   const generated = useSession((s) => s.generated);
   const interviews = useSession((s) => s.interviews);
+  const skillMatches = useSession((s) => s.skillMatches);
   const cv = useSession((s) => s.cv);
 
   const realProfile = useSession.getState().getProfile();
@@ -75,9 +76,16 @@ export default function ResultPage() {
       // Étape 2 (« Creuser ») : champs `user` du contrat docs/DOSSIER.md,
       // expériences racontées comprises (compétences ROME prouvées).
       user: toDossierUser(cv, interviews),
+      // Skill matches : chaque « déjà fait », avec sa compétence ROME.
+      skillMatches: skillMatches.map((m) => ({
+        card: m.text,
+        reason: m.reason,
+        skill: m.skill ?? null,
+      })),
+      // Étape 2 : un récit par métier choisi dans « Mes matchs ».
       interviews: interviews.map((i) => ({
-        skill: { code: i.macro, label: i.skill },
-        proof: { parent: i.parentText, question: i.proofText },
+        job: i.job,
+        experiences: i.experiences.map((e) => ({ card: e.text, skill: e.skill ?? null })),
         questionSource: i.questionSource,
         qa: i.questions.map((question, k) => ({ question, answer: i.answers[k] ?? "" })),
         finished: Boolean(i.finishedAt),

@@ -6,13 +6,17 @@ const LIVED = new Set(["deja-souvent", "deja-une-fois"]);
 /**
  * Le vécu n'est pas dans le dossier exporté : il faut le lire dans la session.
  *
- * - carte fixe + « déjà fait souvent / une fois » → activité vécue ;
- * - carte `gen-creuser-*` + oui → compétence ROME confirmée par le jeune ;
- * - carte `gen-explorer-*` → intérêt, jamais du vécu.
+ * - carte (fixe ou générée) + « déjà fait souvent / une fois » → activité
+ *   vécue = skill match, avec sa compétence ROME quand elle est connue ;
+ * - carte `gen-creuser-*` + oui (anciennes sessions) → compétence ROME confirmée ;
+ * - récits de l'étape 2 (un par métier creusé) → la matière la plus riche.
  */
 export function extractExperience(session: DossierSession): DemoExperience[] {
   const all = [...CARDS, ...session.generated];
   const byId = new Map(all.map((card) => [card.id, card]));
+  const skillOf = new Map(
+    (session.skillMatches ?? []).flatMap((m) => (m.skill ? [[m.cardId, m.skill.label] as const] : [])),
+  );
   const out: DemoExperience[] = [];
   const seen = new Set<string>();
 
@@ -43,13 +47,13 @@ export function extractExperience(session: DossierSession): DemoExperience[] {
       continue;
     }
 
-    if (response.cardId.startsWith("gen-")) continue;
     if (!response.reason || !LIVED.has(response.reason)) continue;
 
     const key = `fixed:${response.cardId}`;
     if (seen.has(key)) continue;
     seen.add(key);
 
+    const skill = skillOf.get(response.cardId) ?? card.target?.label;
     out.push({
       id: key,
       title: card.text,
@@ -59,24 +63,30 @@ export function extractExperience(session: DossierSession): DemoExperience[] {
           : "Déjà fait au moins une fois",
       source: "swipe",
       evidence: [card.text],
+      ...(skill ? { competences: [skill] } : {}),
     });
   }
 
-  // Étape 2 : les récits d'entretien sont la matière la plus riche du CV.
+  // Étape 2 : les récits (un par métier creusé) sont la matière la plus riche du CV.
   for (const interview of session.interviews ?? []) {
+    // Ancien format (avant les récits par métier) : ignoré plutôt que planter.
+    if (!interview.job || !Array.isArray(interview.experiences)) continue;
     if (!interview.answers.some((answer) => answer.trim())) continue;
-    const key = `interview:${interview.cardId}`;
+    const key = `interview:${interview.id}`;
     if (seen.has(key)) continue;
     seen.add(key);
 
     const answers = interview.answers.filter((answer) => answer.trim());
+    const competences = [
+      ...new Set(interview.experiences.flatMap((e) => (e.skill ? [e.skill.label] : []))),
+    ];
     out.push({
       id: key,
-      title: interview.parentText,
+      title: interview.experiences.map((e) => e.text).join(" · "),
       detail: answers.join(" "),
       source: "creuser",
-      evidence: [interview.proofText, ...answers],
-      competences: [interview.skill],
+      evidence: [`Pour le métier : ${interview.job.label}`, ...answers],
+      ...(competences.length > 0 ? { competences } : {}),
     });
   }
 

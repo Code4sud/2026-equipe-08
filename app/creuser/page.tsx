@@ -41,7 +41,9 @@ export default function CreuserPage() {
   const setCvAnswer = useSession((s) => s.setCvAnswer);
   const skipCv = useSession((s) => s.skipCv);
 
-  const interview = interviews.find((i) => i.cardId === activeInterview) ?? null;
+  const interview = interviews.find((i) => i.id === activeInterview) ?? null;
+  // Next garde la page en mémoire (cacheComponents) : l'écran de fin ne vaut que
+  // tant qu'aucun récit n'est ouvert, sinon il réapparaît sur le métier suivant.
   const [done, setDone] = useState<{ cvAsked: boolean } | null>(null);
 
   useQuestions(interview, setInterviewQuestions);
@@ -54,22 +56,22 @@ export default function CreuserPage() {
 
   if (!mounted) return <Spinner />;
 
-  if (done) return <Done cvAsked={done.cvAsked} />;
+  if (done && activeInterview === null) return <Done cvAsked={done.cvAsked} />;
 
   if (!interview) {
     return (
-      <Shell onBack={() => router.push("/deck")}>
+      <Shell onBack={() => router.push("/matchs")}>
         <div className="flex flex-1 flex-col items-center justify-center text-center">
-          <p className="text-2xl font-black tracking-tight">Rien à creuser pour l&apos;instant</p>
+          <p className="text-2xl font-black tracking-tight">Choisis d&apos;abord un métier</p>
           <p className="mt-3 max-w-xs text-sm text-ink/60">
-            Quand tu diras « déjà fait » puis « oui, c&apos;est moi » sur une carte, tu
-            pourras raconter ton expérience ici.
+            Dans « Mes matchs », choisis un métier qui s&apos;appuie sur ce que tu as déjà
+            fait : on en parle ici.
           </p>
           <Link
-            href="/deck"
+            href="/matchs"
             className="hard-shadow mt-8 rounded-full bg-ink px-7 py-4 text-base font-bold text-paper"
           >
-            Retour aux cartes
+            Voir mes matchs
           </Link>
         </div>
       </Shell>
@@ -98,20 +100,20 @@ export default function CreuserPage() {
   const step = steps[stepIndex];
   const answer =
     step.kind === "project" ? interview.answers[step.index] ?? "" : cv[step.question.field] ?? "";
-  const cardId = interview.cardId;
+  const id = interview.id;
 
   function setAnswer(value: string) {
-    if (step.kind === "project") answerInterview(cardId, step.index, value);
+    if (step.kind === "project") answerInterview(id, step.index, value);
     else setCvAnswer(step.question.field, value);
   }
 
   function next({ skipped }: { skipped: boolean }) {
     if (skipped && step.kind === "cv") skipCv(step.question.field);
     if (stepIndex < steps.length - 1) {
-      setInterviewStep(cardId, stepIndex + 1);
+      setInterviewStep(id, stepIndex + 1);
       return;
     }
-    finishInterview(cardId);
+    finishInterview(id);
     setDone({ cvAsked: cvQuestions.length > 0 });
   }
 
@@ -119,18 +121,18 @@ export default function CreuserPage() {
 
   return (
     <Shell
-      onBack={() => (stepIndex > 0 ? setInterviewStep(cardId, stepIndex - 1) : leave())}
+      onBack={() => (stepIndex > 0 ? setInterviewStep(id, stepIndex - 1) : leave())}
       onLeave={leave}
       progress={(stepIndex + 1) / steps.length}
       label={`${stepIndex + 1}/${steps.length}`}
     >
       <div className="mt-6">
         <p className="text-[11px] font-black uppercase tracking-[0.2em] text-ink/45">
-          {step.kind === "project" ? "Ton expérience" : "Pour ton CV"}
+          {step.kind === "project" ? interview.job.label : "Pour ton CV"}
         </p>
         {step.kind === "project" && (
           <p className="mt-1 truncate text-xs font-semibold text-ink/50">
-            « {interview.parentText} » · {interview.skill}
+            Grâce à : {interview.experiences.map((e) => `« ${e.text} »`).join(", ")}
           </p>
         )}
         {firstCv && (
@@ -209,12 +211,12 @@ export default function CreuserPage() {
   );
 }
 
-/** Charge les questions du projet (LLM côté serveur, repli local sinon). */
+/** Charge les questions sur le métier (LLM côté serveur, repli local sinon). */
 function useQuestions(
   interview: Interview | null,
-  setQuestions: (cardId: string, questions: string[], source: QuestionSource) => void,
+  setQuestions: (id: string, questions: string[], source: QuestionSource) => void,
 ) {
-  const cardId = interview?.cardId;
+  const id = interview?.id;
   const needed = Boolean(interview && interview.questions.length === 0);
 
   useEffect(() => {
@@ -226,24 +228,26 @@ function useQuestions(
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            parentText: interview.parentText,
-            proofText: interview.proofText,
-            macro: interview.macro,
+            jobCode: interview.job.code,
+            jobLabel: interview.job.label,
+            experiences: interview.experiences.map((e) => ({ text: e.text, skill: e.skill?.code })),
           }),
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = (await res.json()) as { questions: string[]; source: QuestionSource };
-        if (!cancelled) setQuestions(interview.cardId, data.questions, data.source);
+        if (!cancelled) setQuestions(interview.id, data.questions, data.source);
       } catch (error) {
         console.warn("[creuser] questions indisponibles, repli", error);
-        if (!cancelled) setQuestions(interview.cardId, fallbackQuestions(interview.parentText), "template");
+        if (!cancelled) {
+          setQuestions(interview.id, fallbackQuestions(interview.job.label, interview.experiences), "template");
+        }
       }
     })();
     return () => {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- une seule requête par entretien
-  }, [cardId, needed]);
+  }, [id, needed]);
 }
 
 function AnswerBox({
@@ -383,17 +387,18 @@ function Done({ cvAsked }: { cvAsked: boolean }) {
           ? "Ton expérience et tes infos sont enregistrées. On s'en servira pour écrire ton CV."
           : "Ton expérience est enregistrée. Elle viendra enrichir ton CV."}
       </p>
+      {/* La suite de la pipeline : le dossier (CV, formations, e-mails). */}
       <Link
-        href="/deck"
+        href="/dossier"
         className="hard-shadow mt-8 rounded-full bg-ink px-7 py-4 text-base font-bold text-paper"
       >
-        Continuer à swiper →
+        Voir mon dossier →
       </Link>
-      <Link
-        href="/result"
-        className="mt-4 text-sm font-semibold text-ink/50 underline underline-offset-4"
-      >
-        Voir mes résultats
+      <Link href="/matchs" className="mt-4 text-sm font-semibold text-ink/60 underline underline-offset-4">
+        Creuser un autre métier
+      </Link>
+      <Link href="/deck" className="mt-3 text-sm font-semibold text-ink/45 underline underline-offset-4">
+        Continuer à swiper
       </Link>
     </main>
   );

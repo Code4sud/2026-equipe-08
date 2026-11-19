@@ -122,28 +122,32 @@ Les cartes générées gardent leur cible dans `card.target` (`macro`, `label`, 
 
 Le quiz part des cartes `vecu`, d'abord les cartes creuser.
 
-## Étape 2 — Match de compétence et « Creuser » (19/11/2026)
+## Skill matches, « Mes matchs » et « On creuse » (19/11/2026)
 
-**Déclencheur : preuve de compétence ROME = match.** Un « Oui, c'est moi » sur une carte « On creuse un peu » (le jeune a dit « déjà fait », puis confirmé un vécu précis relié à une compétence ROME) ouvre l'écran **« C'est un match »** : la compétence ROME, ce qui la prouve, et deux boutons.
+**Pourquoi.** Une compétence ROME (« Organiser une livraison ») ne fait pas rêver ; un jeune se projette dans un **métier**. Le swipe garde les compétences comme preuves, mais ce qu'on montre, ce sont des métiers.
 
-- **Creuser** → `/creuser` (étape 2).
-- **Continuer à swiper** → retour au deck ; chaque carte creuser ne déclenche qu'un match.
+**1. Skill match = un « Oui, déjà fait ».** Dès qu'un jeune dit « déjà fait » sur une carte (banque ou générée), une **notification** « C'est un skill match ! » s'affiche en haut d'écran (4,5 s, ne bloque pas le swipe) et le match rejoint la **mémoire des matchs** (`skillMatches`, `lib/matches.ts`). Plus de carte « On creuse un peu » dans le swipe ni d'écran de match bloquant.
 
-Le match passe avant la confirmation de domaine (« Match confirmé ? »), qui s'affiche ensuite si elle est en attente.
+- Compétence ROME du match : une carte générée porte déjà la sienne (`card.target`) ; pour une carte de la banque, `/api/skill` la résout en arrière-plan (`lib/skillOf.ts`) : short-list fermée (lien par les mots avec le garde-fou verbe / centre, puis viviers des 2 centres), le LLM choisit **dans** la liste ou répond « aucune ». Sans LLM : le lien par les mots, sinon aucune compétence (mieux que deviner). Mesuré : ~3 s.
 
-**Étape 2 (`/creuser`)** : une question ouverte par écran, réponse écrite ou dictée.
+**2. « Mes matchs » (`/matchs`)** : bouton dans l'en-tête du deck avec une pastille (matchs pas encore vus), ou tap sur la notification.
+
+- **Métiers proposés** (`/api/jobs`, `lib/careers.ts`) : le code choisit 25 candidats parmi les **849 métiers ROME accessibles** de `data/rome/jobs-index.json` (`npm run build:jobs`, niveaux 0 à 3 ou inconnu) ; score = compétences ROME prouvées présentes dans la fiche + mots communs entre cartes et métier + proximité des centres d'intérêt. Le LLM en retient 3 à 5, variés, et écrit une **accroche reliée au vécu** (« Tu répares déjà un vélo crevé : c'est le cœur du quotidien d'un mécanicien cycles »). Il ne peut choisir que dans la liste : pas de métier inventé. Sans LLM : les 4 mieux classés, accroche construite. Mesuré : 4 à 6 s, puis cache tant que les matchs ne changent pas.
+- Pourquoi un index et pas `jobs-featured.json` : ses ~213 métiers couvrent les centres d'intérêt mais pas les métiers évidents (pas de « Mécanicien cycles »).
+- Sous les métiers : la liste des skill matchs (carte, « déjà fait », compétence ROME).
+
+**3. « On creuse » (`/creuser`) : un récit par métier choisi**, sur les expériences qui y mènent (au plus 3).
 
 | | |
 |---|---|
-| Questions sur le projet | 4, **uniquement sur cette expérience** : contexte → ce qu'il a fait → difficulté → résultat. Écrites par le LLM (`/api/questions`, `lib/interviewQuestions.ts`) à partir des **textes des deux cartes et de la compétence ROME** ; jamais une réponse du jeune n'est envoyée au LLM. Sans LLM : questions de repli (`fallbackQuestions`). Mesuré avec `claude -p` : 5 à 8 s, puis cache. |
-| Questions CV | À la toute fin, **une seule fois par session** : prénom (facultatif), âge, ville + code postal, niveau d'études, situation, petits boulots / stages / bénévolat, permis, mobilité. Réponses rapides en un tap pour les champs à choix. Toutes facultatives. |
-| Dictée | Whisper (`onnx-community/whisper-base`, q8, ~75 Mo) dans un Web Worker via `@huggingface/transformers` : **le son ne quitte pas l'appareil**. Le modèle est téléchargé du Hub au premier usage puis mis en cache par le navigateur. Mesuré (Edge, sans GPU) : 1re dictée 5 à 10 s modèle compris, puis ~3 s pour 6 s de parole. whisper-small transcrit parfaitement mais pèse 240 Mo et est ~6× plus lent. |
-| Stockage | `localStorage` uniquement (`interviews`, `cv` dans `declic-session-v1`). |
+| Questions | 3, sur ces expériences vues sous l'angle du métier : contexte → ce qu'il a fait → ce que ça a donné. Écrites par le LLM (`/api/questions`, `lib/interviewQuestions.ts`) à partir du **métier ROME, des textes des cartes et de leurs compétences** ; jamais une réponse du jeune n'est envoyée au LLM. Sans LLM : questions de repli. |
+| Questions CV | Au plus 3 par récit, parmi celles encore sans réponse (prénom, ville, études, situation, petits boulots, âge, permis, mobilité) ; une question passée n'est pas reposée. |
+| Quitter | « Revenir aux cartes » à tout moment ; reprise au même écran (lien « Reprendre ton récit » dans le deck). |
+| Fin | **« Voir mon dossier »** (`/dossier`), ou creuser un autre métier, ou continuer à swiper. |
+| Dictée | Whisper (`onnx-community/whisper-base`, q8, ~75 Mo) dans un Web Worker : **le son ne quitte pas l'appareil**. Modèle téléchargé du Hub au premier usage puis en cache. Mesuré (Edge, sans GPU) : 1re dictée 5 à 10 s, puis ~3 s pour 6 s de parole. |
+| Stockage | `localStorage` uniquement (`skillMatches`, `jobs`, `interviews`, `cv` dans `declic-session-v1`, version 6 ; les anciennes sessions sont migrées, leurs « déjà fait » deviennent des matchs). |
 
-**Sortie pour l'étape 3 (CV)** : l'export JSON de `/result` contient maintenant :
-
-- `user` : les champs `user` du contrat d'entrée de `docs/DOSSIER.md` (`toDossierUser`) ; chaque expérience racontée y devient une entrée `experience` avec sa compétence ROME dans `competences`. Les réponses libres qui ne rentrent dans aucun champ restent dans `user.raw`.
-- `interviews[]` : compétence ROME (`skill.code`, `skill.label`), preuve (carte d'origine + question de vécu), questions et réponses.
+**Sortie pour le dossier** : l'export de `/result` contient `skillMatches`, `interviews` (métier, expériences, questions / réponses) et `user` (contrat `docs/DOSSIER.md`, avec `targetJobs`). `lib/dossier/experience.ts` lit les compétences des matchs et les récits par métier.
 
 ## Limites connues et suite
 

@@ -1,31 +1,33 @@
 import { z } from "zod";
 import { getMacro } from "./adaptive/skills";
+import { getIndexedJob } from "./careers";
 import { PROJECT_QUESTION_COUNT, fallbackQuestions, type QuestionSource } from "./interview";
 import { completeJson } from "./llm";
 
 /**
- * Questions ouvertes de l'étape 2, écrites par le LLM (serveur uniquement).
+ * Questions ouvertes de l'étape 2 (« On creuse »), écrites par le LLM
+ * (serveur uniquement), autour d'un métier choisi dans « Mes matchs ».
  *
- * Le LLM reçoit uniquement des TEXTES DE CARTES et la compétence ROME :
- * jamais une réponse du jeune (règle « récit libre jamais envoyé brut à
- * l'IA », docs/DOSSIER.md). Sans LLM ou si la sortie sort du cadre : questions
- * de repli (`fallbackQuestions`).
+ * Le LLM reçoit uniquement le métier ROME, les TEXTES DES CARTES vécues et
+ * leurs compétences ROME : jamais une réponse du jeune (règle « récit libre
+ * jamais envoyé brut à l'IA », docs/DOSSIER.md). Sans LLM ou si la sortie
+ * sort du cadre : questions de repli (`fallbackQuestions`).
  */
 
 export const QUESTIONS_SYSTEM_PROMPT = `Tu prépares un mini-entretien pour Orientis, une app qui aide des jeunes de 17 à 25 ans en décrochage, suivis en mission locale, à mettre des mots sur ce qu'ils savent faire. Beaucoup pensent qu'ils ne savent "rien faire".
 
-Le jeune vient de dire qu'il a DÉJÀ vécu une situation précise. On te donne cette situation et la compétence du répertoire ROME (France Travail) qu'elle prouve. Tu écris ${PROJECT_QUESTION_COUNT} questions ouvertes pour lui faire raconter CETTE expérience, de quoi écrire ensuite une ligne de CV crédible.
+Le jeune s'intéresse à un métier du répertoire ROME (France Travail). On te donne ce métier et les situations qu'il a DÉJÀ vécues et qui y mènent. Tu écris ${PROJECT_QUESTION_COUNT} questions ouvertes pour lui faire raconter CES expériences, de quoi écrire ensuite une ligne de CV crédible pour ce métier.
 
 Ordre :
-1. le contexte (quand, où, dans quel cadre : potes, asso, quartier, petit job, en ligne…) ;
+1. le contexte d'une de ses expériences (quand, où, dans quel cadre : potes, asso, quartier, petit job, en ligne…) ;
 2. ce qu'il a fait LUI, concrètement, étape par étape ;
-3. le résultat (ce que ça a donné, pour qui, un retour reçu).
+3. ce que ça a donné, en lien avec le métier (le résultat, un retour reçu, ce qui ressemble déjà au métier).
 
 Règles :
-- Uniquement sur cette expérience. Pas de question sur sa vie, ses projets, ses études ou sa motivation.
-- Une seule idée par question, 8 à 25 mots, registre parlé, tutoiement, sans jargon ROME ni intitulé de métier.
+- Uniquement sur ses expériences vécues, vues sous l'angle du métier. Pas de question sur sa vie, ses études ou sa motivation.
+- Une seule idée par question, 8 à 25 mots, registre parlé, tutoiement, sans jargon ROME.
 - Ouvertes : impossible d'y répondre par oui ou non.
-- Ancre les questions dans la situation (reprends ses mots), et oriente au moins une question vers la compétence ROME sans la nommer.
+- Ancre les questions dans ses situations (reprends ses mots). Tu peux nommer le métier une fois, au plus.
 - Bienveillant : jamais de jugement, jamais "pourquoi tu n'as pas…".
 - Interdit : la santé, le handicap, l'origine, le pays, la religion, la famille du jeune, son argent, sa situation administrative, la politique, la sexualité. Ne demande aucun nom de personne.
 - Écris de façon neutre en genre (évite les accords au masculin ou au féminin quand c'est possible).
@@ -52,24 +54,19 @@ const jsonSchema = {
 };
 
 export type QuestionInput = {
-  /** Carte où le jeune a dit « déjà fait ». */
-  parentText: string;
-  /** Question de vécu à laquelle il a répondu oui. */
-  proofText: string;
-  /** Code OGR de la macro-compétence ROME. */
-  macro: number;
+  /** Code ROME du métier visé. */
+  jobCode: string;
+  jobLabel: string;
+  /** Cartes « déjà fait » qui mènent au métier, avec leur compétence ROME. */
+  experiences: Array<{ text: string; skill?: number }>;
 };
 
-export function buildQuestionsPrompt({ parentText, proofText, macro }: QuestionInput): string {
-  const m = getMacro(macro);
-  const lines = [
-    `Situation vécue (il a dit "déjà fait") : « ${parentText} »`,
-    `Il a précisé : oui à « ${proofText} »`,
-  ];
-  if (m) {
-    lines.push(`Compétence ROME prouvée : « ${m.label} »`);
-    const children = m.children.slice(0, 8).map((c) => c.label);
-    if (children.length > 0) lines.push("Compétences fines (pour orienter, sans les citer) :", ...children.map((c) => `- ${c}`));
+export function buildQuestionsPrompt({ jobCode, jobLabel, experiences }: QuestionInput): string {
+  const job = getIndexedJob(jobCode);
+  const lines = [`Métier visé : ${job?.label ?? jobLabel}${job?.definition ? ` — ${job.definition}` : ""}`, "", "Ce qu'il a déjà fait :"];
+  for (const e of experiences) {
+    const skill = e.skill ? getMacro(e.skill)?.label : undefined;
+    lines.push(`- « ${e.text} »${skill ? ` (compétence ROME : ${skill})` : ""}`);
   }
   return lines.join("\n");
 }
@@ -86,7 +83,10 @@ export function isUsableQuestion(q: string): boolean {
 export async function writeQuestions(
   input: QuestionInput,
 ): Promise<{ questions: string[]; source: QuestionSource }> {
-  const fallback = { questions: fallbackQuestions(input.parentText), source: "template" as const };
+  const fallback = {
+    questions: fallbackQuestions(input.jobLabel, input.experiences),
+    source: "template" as const,
+  };
 
   const out = await completeJson({
     system: QUESTIONS_SYSTEM_PROMPT,

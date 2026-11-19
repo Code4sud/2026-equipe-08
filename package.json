@@ -11,7 +11,9 @@
     "test:watch": "vitest",
     "import:rome": "node scripts/import-rome.mjs",
     "build:skills": "node scripts/build-skills.mjs",
+    "build:jobs": "node scripts/build-jobs-index.mjs",
     "pregen:cards": "tsx scripts/pregen-cards.ts",
+    "bench:jobs": "tsx scripts/bench-jobs/run.ts",
     "claude": "bash scripts/claude.sh"
   },
   "dependencies": {

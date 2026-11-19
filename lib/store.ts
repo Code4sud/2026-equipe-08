@@ -5,12 +5,20 @@ import { persist } from "zustand/middleware";
 import { CARDS } from "../content/cards";
 import { PAIRS } from "../content/pairs";
 import {
+  interviewId,
   pickCvFields,
   type CvAnswers,
   type CvField,
   type Interview,
   type QuestionSource,
 } from "./interview";
+import {
+  matchesKey,
+  toMatchInput,
+  type JobSuggestion,
+  type SkillMatch,
+  type SkillRef,
+} from "./matches";
 import { createProfile, computeProfile, proposeConfirmation, resolveConfirmation } from "./score";
 import { nextCard, nextTraitPair } from "./select";
 import type {
@@ -34,8 +42,10 @@ export type SessionSnapshot = {
   interviews?: Interview[];
   cv?: CvAnswers;
   cvSkipped?: CvField[];
-  matchedSkills?: string[];
+  skillMatches?: SkillMatch[];
 };
+
+type JobsCache = { key: string; list: JobSuggestion[] };
 
 type SessionState = {
   responses: Response[];
@@ -61,19 +71,18 @@ type SessionState = {
    * « Tu l'as déjà fait ? » avant de passer à la suite.
    */
   awaitingExperience: boolean;
-  /** Cartes "déjà fait" pour lesquelles une carte creuser a déjà été demandée. */
-  creuserAsked: string[];
 
-  /**
-   * Match de compétence : id de la carte « creuser » à laquelle le jeune vient
-   * de répondre « Oui, c'est moi » (vécu prouvé, relié à une compétence ROME).
-   */
-  skillMatch: string | null;
-  /** Cartes « creuser » qui ont déjà déclenché un match (une seule fois chacune). */
-  matchedSkills: string[];
-  /** Étape 2 : un entretien par expérience creusée. */
+  /** Mémoire des skill matches : un par carte où le jeune a dit « déjà fait ». */
+  skillMatches: SkillMatch[];
+  /** Transitoire : carte du dernier match, pour la notification. */
+  toast: string | null;
+  /** Métiers proposés dans « Mes matchs » (recalculés quand les matchs changent). */
+  jobs: JobsCache | null;
+  /** Transitoire : /api/jobs en cours. */
+  jobsLoading: boolean;
+  /** Étape 2 : un entretien par métier creusé. */
   interviews: Interview[];
-  /** Entretien en cours (id de la carte « creuser »). */
+  /** Entretien en cours (id `job:<code>`). */
   activeInterview: string | null;
   /** Réponses aux questions CV (quelques-unes à la fin de chaque entretien). */
   cv: CvAnswers;
@@ -102,15 +111,20 @@ type SessionState = {
   /** Demande la prochaine carte adaptative si la file est vide. */
   pump: () => Promise<void>;
 
-  /** « Continuer à swiper » sur l'écran de match. */
-  dismissSkillMatch: () => void;
-  /** « Creuser » : ouvre (ou reprend) l'entretien sur cette expérience. */
-  startInterview: (cardId: string) => void;
-  setInterviewQuestions: (cardId: string, questions: string[], source: QuestionSource) => void;
-  answerInterview: (cardId: string, index: number, answer: string) => void;
+  /** Résout en arrière-plan la compétence ROME des matchs en attente. */
+  resolvePendingSkills: () => void;
+  dismissToast: () => void;
+  /** « Mes matchs » ouvert : la pastille repart de zéro. */
+  markMatchesSeen: () => void;
+  /** Charge les métiers proposés (cache tant que les matchs ne changent pas). */
+  loadJobs: () => Promise<void>;
+  /** Clic sur un métier : ouvre (ou reprend) l'entretien « On creuse ». */
+  startJobInterview: (job: JobSuggestion) => void;
+  setInterviewQuestions: (id: string, questions: string[], source: QuestionSource) => void;
+  answerInterview: (id: string, index: number, answer: string) => void;
   /** Écran courant de l'entretien (pour reprendre au même endroit). */
-  setInterviewStep: (cardId: string, step: number) => void;
-  finishInterview: (cardId: string) => void;
+  setInterviewStep: (id: string, step: number) => void;
+  finishInterview: (id: string) => void;
   /** Quitter l'étape 2 sans finir : tout est gardé, on pourra reprendre. */
   leaveInterview: () => void;
   setCvAnswer: (field: CvField, answer: string) => void;
@@ -122,38 +136,12 @@ const ADAPTIVE_WARMUP = 2;
 /** Plafond de cartes générées par session. */
 const MAX_GENERATED = 18;
 const MAX_FAILURES = 3;
-/** Même plafond que le serveur (lib/adaptive/target.ts). */
-const MAX_CREUSER = 6;
+/** Expériences au plus dans un entretien (les questions restent ciblées). */
+const MAX_INTERVIEW_EXPERIENCES = 3;
 
 const LIVED = new Set<SwipeReason>(["deja-souvent", "deja-une-fois"]);
-
-/**
- * Cartes "déjà fait" pas encore creusées ni demandées. Si la liste n'est pas
- * vide, on demande une carte même si une carte explorer attend déjà en file :
- * la carte creuser doit arriver juste après le "déjà fait".
- */
-function creuserCandidates(state: {
-  responses: Response[];
-  generated: Card[];
-  creuserAsked: string[];
-}): string[] {
-  const creused = new Set(
-    state.generated.map((c) => c.target?.parentId).filter((id): id is string => Boolean(id)),
-  );
-  const creuserCount = state.generated.filter((c) => c.target?.mode === "creuser").length;
-  if (creuserCount >= MAX_CREUSER) return [];
-  return state.responses
-    .filter(
-      (r) =>
-        r.direction === "right" &&
-        r.reason &&
-        LIVED.has(r.reason) &&
-        !r.cardId.startsWith("gen-creuser-") &&
-        !creused.has(r.cardId) &&
-        !state.creuserAsked.includes(r.cardId),
-    )
-    .map((r) => r.cardId);
-}
+const isLived = (reason?: SwipeReason): reason is SkillMatch["reason"] =>
+  Boolean(reason && LIVED.has(reason));
 
 function deriveProfile(state: {
   responses: Response[];
@@ -175,6 +163,30 @@ function deriveProfile(state: {
   return profile;
 }
 
+/**
+ * « Déjà fait » sur une carte = skill match. Une carte générée porte déjà sa
+ * compétence ROME ; celle d'une carte de la banque est résolue en arrière-plan.
+ */
+function makeMatch(card: Card, reason: SkillMatch["reason"]): SkillMatch {
+  const skill: SkillRef | undefined = card.target
+    ? { code: card.target.macro, label: card.target.label }
+    : undefined;
+  return {
+    cardId: card.id,
+    text: card.text,
+    emoji: card.emoji,
+    reason,
+    centers: card.centers,
+    skill,
+    skillStatus: skill ? "found" : "pending",
+    at: Date.now(),
+    seen: false,
+  };
+}
+
+/** Requêtes /api/skill en cours (hors état : rien à persister). */
+const resolving = new Set<string>();
+
 const MAX_RESPONSES = 48;
 
 const initialState = {
@@ -192,9 +204,10 @@ const initialState = {
   fetching: false,
   failures: 0,
   awaitingExperience: false,
-  creuserAsked: [] as string[],
-  skillMatch: null as string | null,
-  matchedSkills: [] as string[],
+  skillMatches: [] as SkillMatch[],
+  toast: null as string | null,
+  jobs: null as JobsCache | null,
+  jobsLoading: false,
   interviews: [] as Interview[],
   activeInterview: null as string | null,
   cv: {} as CvAnswers,
@@ -203,20 +216,18 @@ const initialState = {
 
 function updateInterview(
   interviews: Interview[],
-  cardId: string,
+  id: string,
   patch: (interview: Interview) => Interview,
 ): Interview[] {
-  return interviews.map((i) => (i.cardId === cardId ? patch(i) : i));
+  return interviews.map((i) => (i.id === id ? patch(i) : i));
 }
 
 const isGenerated = (id: string) => id.startsWith("gen-");
 
 /**
- * Carte suivante. La file n'attend jamais le LLM :
- * - une carte "creuser" prête passe devant tout (elle rebondit sur un "déjà fait") ;
- * - sinon on alterne banque fixe et carte adaptative, pour garder les
- *   situations écrites à la main et limiter les appels LLM ;
- * - à défaut, la banque fixe (sélection UCB existante).
+ * Carte suivante. La file n'attend jamais le LLM : on alterne banque fixe et
+ * carte adaptative, pour garder les situations écrites à la main et limiter
+ * les appels LLM ; à défaut, la banque fixe (sélection UCB existante).
  */
 function pickNext(
   queue: string[],
@@ -228,9 +239,6 @@ function pickNext(
   const pending = queue.filter((id) => !seen.has(id));
   const take = (id: string) => ({ id, queue: pending.filter((x) => x !== id) });
 
-  const creuser = pending.find((id) => id.startsWith("gen-creuser-"));
-  if (creuser) return take(creuser);
-
   const last = responses.at(-1);
   const bank = nextCard(profile, responses);
   if (pending[0] && (!last || !isGenerated(last.cardId) || !bank)) return take(pending[0]);
@@ -240,335 +248,404 @@ function pickNext(
 
 export const useSession = create<SessionState>()(
   persist(
-    (set, get) => ({
-      ...initialState,
-
-      getProfile: () => deriveProfile(get()),
-
-      loadSession: (session) => {
-        set({
-          ...initialState,
-          ...session,
-          currentCardId: null,
-          startedAt: Date.now(),
-        });
-      },
-
-      allCards: () => [...CARDS, ...get().generated],
-
-      ensureCard: () => {
-        if (get().currentCardId) {
-          void get().pump();
-          return;
-        }
+    (set, get) => {
+      /** Ajoute le match d'un « déjà fait » (une fois par carte) et notifie. */
+      const addMatch = (cardId: string, reason: SkillMatch["reason"]) => {
         const state = get();
-        const next = pickNext(state.queue, deriveProfile(state), state.responses);
-        set({ currentCardId: next.id, queue: next.queue });
-        void get().pump();
-      },
-
-      pump: async () => {
-        const state = get();
-        const wantCreuser = creuserCandidates(state);
-        if (
-          state.fetching ||
-          state.awaitingExperience ||
-          state.failures >= MAX_FAILURES ||
-          (state.queue.length > 0 && wantCreuser.length === 0) ||
-          state.generated.length >= MAX_GENERATED ||
-          state.responses.length < ADAPTIVE_WARMUP ||
-          state.responses.length >= MAX_RESPONSES
-        ) {
-          return;
-        }
-
-        set({ fetching: true, creuserAsked: [...state.creuserAsked, ...wantCreuser] });
-        try {
-          const res = await fetch("/api/card", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              responses: state.responses.map(({ cardId, direction, reason }) => ({
-                cardId,
-                direction,
-                reason,
-              })),
-              generated: state.generated,
-            }),
-          });
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const { card } = (await res.json()) as { card: Card | null };
-
-          const now = get();
-          if (card && !now.generated.some((c) => c.id === card.id)) {
-            set({
-              generated: [...now.generated, card],
-              queue: [...now.queue, card.id],
-              failures: 0,
-            });
-          } else {
-            set({ failures: 0 });
-          }
-        } catch (error) {
-          console.warn("[deck] carte adaptative indisponible", error);
-          set({ failures: get().failures + 1 });
-        } finally {
-          set({ fetching: false });
-        }
-
-        // Le jeune a pu répondre pendant la requête : on relance si la file
-        // s'est vidée, ou si un nouveau "déjà fait" attend sa carte creuser.
-        const after = get();
-        if (
-          creuserCandidates(after).length > 0 ||
-          (after.queue.length === 0 && after.responses.length > state.responses.length)
-        ) {
-          void get().pump();
-        }
-      },
-
-      ensurePair: () => {
-        if (get().currentPairId) return;
-        const next = nextTraitPair(get().traitResponses);
-        set({ currentPairId: next?.id ?? null });
-      },
-
-      swipeCard: (direction, reason, latencyMs) => {
-        const state = get();
-        const card = get()
-          .allCards()
-          .find((c) => c.id === state.currentCardId);
+        if (state.skillMatches.some((m) => m.cardId === cardId)) return;
+        const card = get().allCards().find((c) => c.id === cardId);
         if (!card) return;
+        set({ skillMatches: [...state.skillMatches, makeMatch(card, reason)], toast: card.id });
+        get().resolvePendingSkills();
+      };
 
-        const response: Response = {
-          cardId: card.id,
-          direction,
-          reason,
-          latencyMs,
-          ts: Date.now(),
-        };
-        const responses = [...state.responses, response];
+      return {
+        ...initialState,
 
-        const profile = deriveProfile({ ...state, responses });
-        let pending = state.pendingConfirmation;
-        if (!pending) {
-          const proposal = proposeConfirmation(profile);
-          if (proposal && !state.dismissed.includes(proposal)) {
-            pending = proposal;
-          }
-        }
+        getProfile: () => deriveProfile(get()),
 
-        const next = pickNext(state.queue, profile, responses);
-
-        // Oui sur une carte d'intérêt : on demande « déjà fait ? » avant la suite.
-        // (Une carte creuser est déjà une question de vécu.)
-        const awaitingExperience =
-          direction === "right" && card.target?.mode !== "creuser" && !reason;
-
-        // « Oui, c'est moi » sur une carte creuser = compétence ROME prouvée : match.
-        const isSkillProof =
-          direction === "right" &&
-          card.target?.mode === "creuser" &&
-          !state.matchedSkills.includes(card.id);
-
-        set({
-          responses,
-          currentCardId: next.id,
-          queue: next.queue,
-          pendingConfirmation: pending,
-          ...(isSkillProof
-            ? { skillMatch: card.id, matchedSkills: [...state.matchedSkills, card.id] }
-            : {}),
-          lastResponse: { kind: "card", index: responses.length - 1 },
-          startedAt: state.startedAt ?? Date.now(),
-          awaitingExperience,
-        });
-        if (!awaitingExperience) void get().pump();
-      },
-
-      answerExperience: (lived) => {
-        if (!get().awaitingExperience) return;
-        set({ awaitingExperience: false });
-        get().setReason(lived ? "deja-une-fois" : "jamais-fait-mais-tente");
-        void get().pump();
-      },
-
-      setReason: (reason) => {
-        const state = get();
-        const last = state.lastResponse;
-        if (!last || last.kind !== "card") return;
-        const responses = state.responses.map((r, i) =>
-          i === last.index ? { ...r, reason } : r,
-        );
-        set({ responses });
-        // "Déjà fait" ouvre une carte "creuser" : on la prépare tout de suite.
-        if (LIVED.has(reason)) void get().pump();
-      },
-
-      resolvePending: (accepted) => {
-        const state = get();
-        const centerId = state.pendingConfirmation;
-        if (!centerId) return;
-
-        const confirmation: Confirmation = {
-          centerId,
-          accepted,
-          ts: Date.now(),
-        };
-        const confirmations = [...state.confirmations, confirmation];
-        const dismissed = accepted
-          ? state.dismissed
-          : [...state.dismissed, centerId];
-
-        const profile = deriveProfile({ ...state, confirmations });
-        // La carte courante est déjà affichée derrière l'overlay : on ne la
-        // remplace que si elle porte sur un domaine qui vient de se fermer.
-        const current = get()
-          .allCards()
-          .find((c) => c.id === state.currentCardId);
-        const stillOpen =
-          current &&
-          Object.keys(current.centers).some((id) => {
-            const d = profile.domains[id];
-            return d && !d.confirmed && !d.rejected;
-          });
-        const next = stillOpen
-          ? { id: state.currentCardId, queue: state.queue }
-          : pickNext(state.queue, profile, state.responses);
-
-        set({
-          confirmations,
-          dismissed,
-          pendingConfirmation: null,
-          currentCardId: next.id ?? state.currentCardId,
-          queue: next.queue,
-        });
-      },
-
-      swipePair: (direction, latencyMs) => {
-        const state = get();
-        const pair = PAIRS.find((p) => p.id === state.currentPairId);
-        if (!pair) return;
-
-        const traitResponses: TraitResponse[] = [
-          ...state.traitResponses,
-          { pairId: pair.id, direction, latencyMs, ts: Date.now() },
-        ];
-        const next = nextTraitPair(traitResponses);
-
-        set({
-          traitResponses,
-          currentPairId: next?.id ?? null,
-          lastResponse: { kind: "pair", index: traitResponses.length - 1 },
-          startedAt: state.startedAt ?? Date.now(),
-        });
-      },
-
-      startStyle: () => {
-        const next = nextTraitPair(get().traitResponses);
-        set({ currentPairId: next?.id ?? null });
-      },
-
-      dismissSkillMatch: () => set({ skillMatch: null }),
-
-      startInterview: (cardId) => {
-        const state = get();
-        const cards = get().allCards();
-        const proof = cards.find((c) => c.id === cardId);
-        if (!proof?.target) return;
-
-        if (!state.interviews.some((i) => i.cardId === cardId)) {
-          const parent = cards.find((c) => c.id === proof.target?.parentId);
-          const interview: Interview = {
-            cardId,
-            parentId: proof.target.parentId,
-            parentText: parent?.text ?? proof.text,
-            proofText: proof.text,
-            macro: proof.target.macro,
-            skill: proof.target.label,
-            questions: [],
-            answers: [],
-            // Les questions CV encore ouvertes et pas réservées par un autre récit en cours.
-            cvFields: pickCvFields(state.cv, [
-              ...state.cvSkipped,
-              ...state.interviews.filter((i) => !i.finishedAt).flatMap((i) => i.cvFields),
-            ]),
-            step: 0,
+        loadSession: (session) => {
+          set({
+            ...initialState,
+            ...session,
+            currentCardId: null,
             startedAt: Date.now(),
+          });
+        },
+
+        allCards: () => [...CARDS, ...get().generated],
+
+        ensureCard: () => {
+          if (get().currentCardId) {
+            void get().pump();
+            return;
+          }
+          const state = get();
+          const next = pickNext(state.queue, deriveProfile(state), state.responses);
+          set({ currentCardId: next.id, queue: next.queue });
+          void get().pump();
+        },
+
+        pump: async () => {
+          const state = get();
+          if (
+            state.fetching ||
+            state.awaitingExperience ||
+            state.failures >= MAX_FAILURES ||
+            state.queue.length > 0 ||
+            state.generated.length >= MAX_GENERATED ||
+            state.responses.length < ADAPTIVE_WARMUP ||
+            state.responses.length >= MAX_RESPONSES
+          ) {
+            return;
+          }
+
+          set({ fetching: true });
+          try {
+            const res = await fetch("/api/card", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                responses: state.responses.map(({ cardId, direction, reason }) => ({
+                  cardId,
+                  direction,
+                  reason,
+                })),
+                generated: state.generated,
+              }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const { card } = (await res.json()) as { card: Card | null };
+
+            const now = get();
+            if (card && !now.generated.some((c) => c.id === card.id)) {
+              set({
+                generated: [...now.generated, card],
+                queue: [...now.queue, card.id],
+                failures: 0,
+              });
+            } else {
+              set({ failures: 0 });
+            }
+          } catch (error) {
+            console.warn("[deck] carte adaptative indisponible", error);
+            set({ failures: get().failures + 1 });
+          } finally {
+            set({ fetching: false });
+          }
+
+          // Le jeune a pu répondre pendant la requête : on relance si la file s'est vidée.
+          const after = get();
+          if (after.queue.length === 0 && after.responses.length > state.responses.length) {
+            void get().pump();
+          }
+        },
+
+        ensurePair: () => {
+          if (get().currentPairId) return;
+          const next = nextTraitPair(get().traitResponses);
+          set({ currentPairId: next?.id ?? null });
+        },
+
+        swipeCard: (direction, reason, latencyMs) => {
+          const state = get();
+          const card = get()
+            .allCards()
+            .find((c) => c.id === state.currentCardId);
+          if (!card) return;
+
+          const response: Response = {
+            cardId: card.id,
+            direction,
+            reason,
+            latencyMs,
+            ts: Date.now(),
           };
-          set({ interviews: [...state.interviews, interview] });
-        }
-        set({ activeInterview: cardId, skillMatch: null });
-      },
+          const responses = [...state.responses, response];
 
-      setInterviewQuestions: (cardId, questions, source) =>
-        set({
-          interviews: updateInterview(get().interviews, cardId, (i) =>
-            i.questions.length > 0
-              ? i
-              : { ...i, questions, questionSource: source, answers: questions.map(() => "") },
-          ),
-        }),
+          const profile = deriveProfile({ ...state, responses });
+          let pending = state.pendingConfirmation;
+          if (!pending) {
+            const proposal = proposeConfirmation(profile);
+            if (proposal && !state.dismissed.includes(proposal)) {
+              pending = proposal;
+            }
+          }
 
-      answerInterview: (cardId, index, answer) =>
-        set({
-          interviews: updateInterview(get().interviews, cardId, (i) => {
-            const answers = [...i.answers];
-            answers[index] = answer;
-            return { ...i, answers };
+          const next = pickNext(state.queue, profile, responses);
+
+          // Oui sur une carte d'intérêt : on demande « déjà fait ? » avant la suite.
+          const awaitingExperience = direction === "right" && !reason;
+
+          set({
+            responses,
+            currentCardId: next.id,
+            queue: next.queue,
+            pendingConfirmation: pending,
+            lastResponse: { kind: "card", index: responses.length - 1 },
+            startedAt: state.startedAt ?? Date.now(),
+            awaitingExperience,
+          });
+          if (direction === "right" && isLived(reason)) addMatch(card.id, reason);
+          if (!awaitingExperience) void get().pump();
+        },
+
+        answerExperience: (lived) => {
+          if (!get().awaitingExperience) return;
+          set({ awaitingExperience: false });
+          get().setReason(lived ? "deja-une-fois" : "jamais-fait-mais-tente");
+          void get().pump();
+        },
+
+        setReason: (reason) => {
+          const state = get();
+          const last = state.lastResponse;
+          if (!last || last.kind !== "card") return;
+          const response = state.responses[last.index];
+          const responses = state.responses.map((r, i) =>
+            i === last.index ? { ...r, reason } : r,
+          );
+          set({ responses });
+          // « Déjà fait » = skill match.
+          if (response?.direction === "right" && isLived(reason)) addMatch(response.cardId, reason);
+        },
+
+        resolvePending: (accepted) => {
+          const state = get();
+          const centerId = state.pendingConfirmation;
+          if (!centerId) return;
+
+          const confirmation: Confirmation = {
+            centerId,
+            accepted,
+            ts: Date.now(),
+          };
+          const confirmations = [...state.confirmations, confirmation];
+          const dismissed = accepted
+            ? state.dismissed
+            : [...state.dismissed, centerId];
+
+          const profile = deriveProfile({ ...state, confirmations });
+          // La carte courante est déjà affichée derrière l'overlay : on ne la
+          // remplace que si elle porte sur un domaine qui vient de se fermer.
+          const current = get()
+            .allCards()
+            .find((c) => c.id === state.currentCardId);
+          const stillOpen =
+            current &&
+            Object.keys(current.centers).some((id) => {
+              const d = profile.domains[id];
+              return d && !d.confirmed && !d.rejected;
+            });
+          const next = stillOpen
+            ? { id: state.currentCardId, queue: state.queue }
+            : pickNext(state.queue, profile, state.responses);
+
+          set({
+            confirmations,
+            dismissed,
+            pendingConfirmation: null,
+            currentCardId: next.id ?? state.currentCardId,
+            queue: next.queue,
+          });
+        },
+
+        swipePair: (direction, latencyMs) => {
+          const state = get();
+          const pair = PAIRS.find((p) => p.id === state.currentPairId);
+          if (!pair) return;
+
+          const traitResponses: TraitResponse[] = [
+            ...state.traitResponses,
+            { pairId: pair.id, direction, latencyMs, ts: Date.now() },
+          ];
+          const next = nextTraitPair(traitResponses);
+
+          set({
+            traitResponses,
+            currentPairId: next?.id ?? null,
+            lastResponse: { kind: "pair", index: traitResponses.length - 1 },
+            startedAt: state.startedAt ?? Date.now(),
+          });
+        },
+
+        startStyle: () => {
+          const next = nextTraitPair(get().traitResponses);
+          set({ currentPairId: next?.id ?? null });
+        },
+
+        resolvePendingSkills: () => {
+          for (const match of get().skillMatches) {
+            if (match.skillStatus !== "pending" || resolving.has(match.cardId)) continue;
+            resolving.add(match.cardId);
+            void (async () => {
+              let skill: SkillRef | null = null;
+              let ok = false;
+              try {
+                const res = await fetch("/api/skill", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ cardId: match.cardId }),
+                });
+                if (res.ok) {
+                  skill = ((await res.json()) as { skill: SkillRef | null }).skill;
+                  ok = true;
+                }
+              } catch (error) {
+                console.warn("[matchs] compétence indisponible", error);
+              } finally {
+                resolving.delete(match.cardId);
+              }
+              // Échec réseau : on retentera plus tard (le match reste « pending »).
+              if (!ok) return;
+              set({
+                skillMatches: get().skillMatches.map((m) =>
+                  m.cardId === match.cardId
+                    ? { ...m, skill: skill ?? undefined, skillStatus: skill ? "found" : "none" }
+                    : m,
+                ),
+              });
+            })();
+          }
+        },
+
+        dismissToast: () => set({ toast: null }),
+
+        markMatchesSeen: () =>
+          set({ skillMatches: get().skillMatches.map((m) => (m.seen ? m : { ...m, seen: true })) }),
+
+        loadJobs: async () => {
+          const state = get();
+          if (state.skillMatches.length === 0 || state.jobsLoading) return;
+          const key = matchesKey(state.skillMatches);
+          if (state.jobs?.key === key) return;
+
+          set({ jobsLoading: true });
+          try {
+            const res = await fetch("/api/jobs", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ matches: state.skillMatches.map(toMatchInput) }),
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const { jobs } = (await res.json()) as { jobs: JobSuggestion[] };
+            set({ jobs: { key, list: jobs } });
+          } catch (error) {
+            console.warn("[matchs] métiers indisponibles", error);
+          } finally {
+            set({ jobsLoading: false });
+          }
+          // Un match (ou sa compétence) a changé pendant la requête : on recalcule.
+          if (matchesKey(get().skillMatches) !== key) void get().loadJobs();
+        },
+
+        startJobInterview: (job) => {
+          const state = get();
+          const id = interviewId(job.code);
+          if (!state.interviews.some((i) => i.id === id)) {
+            const supporting = state.skillMatches.filter((m) => job.cardIds.includes(m.cardId));
+            const experiences = (supporting.length > 0 ? supporting : state.skillMatches.slice(-1))
+              .slice(0, MAX_INTERVIEW_EXPERIENCES)
+              .map((m) => ({ cardId: m.cardId, text: m.text, skill: m.skill }));
+            const interview: Interview = {
+              id,
+              job: { code: job.code, label: job.label },
+              experiences,
+              questions: [],
+              answers: [],
+              // Les questions CV encore ouvertes et pas réservées par un autre récit en cours.
+              cvFields: pickCvFields(state.cv, [
+                ...state.cvSkipped,
+                ...state.interviews.filter((i) => !i.finishedAt).flatMap((i) => i.cvFields),
+              ]),
+              step: 0,
+              startedAt: Date.now(),
+            };
+            set({ interviews: [...state.interviews, interview] });
+          }
+          set({ activeInterview: id });
+        },
+
+        setInterviewQuestions: (id, questions, source) =>
+          set({
+            interviews: updateInterview(get().interviews, id, (i) =>
+              i.questions.length > 0
+                ? i
+                : { ...i, questions, questionSource: source, answers: questions.map(() => "") },
+            ),
           }),
-        }),
 
-      setInterviewStep: (cardId, step) =>
-        set({ interviews: updateInterview(get().interviews, cardId, (i) => ({ ...i, step })) }),
+        answerInterview: (id, index, answer) =>
+          set({
+            interviews: updateInterview(get().interviews, id, (i) => {
+              const answers = [...i.answers];
+              answers[index] = answer;
+              return { ...i, answers };
+            }),
+          }),
 
-      finishInterview: (cardId) =>
-        set({
-          interviews: updateInterview(get().interviews, cardId, (i) => ({
-            ...i,
-            finishedAt: i.finishedAt ?? Date.now(),
-          })),
-          activeInterview: null,
-        }),
+        setInterviewStep: (id, step) =>
+          set({ interviews: updateInterview(get().interviews, id, (i) => ({ ...i, step })) }),
 
-      leaveInterview: () => set({ activeInterview: null }),
+        finishInterview: (id) =>
+          set({
+            interviews: updateInterview(get().interviews, id, (i) => ({
+              ...i,
+              finishedAt: i.finishedAt ?? Date.now(),
+            })),
+            activeInterview: null,
+          }),
 
-      setCvAnswer: (field, answer) => set({ cv: { ...get().cv, [field]: answer } }),
+        leaveInterview: () => set({ activeInterview: null }),
 
-      skipCv: (field) => {
-        const state = get();
-        if (state.cv[field]?.trim() || state.cvSkipped.includes(field)) return;
-        set({ cvSkipped: [...state.cvSkipped, field] });
-      },
+        setCvAnswer: (field, answer) => set({ cv: { ...get().cv, [field]: answer } }),
 
-      reset: () => {
-        set({ ...initialState });
-      },
-    }),
+        skipCv: (field) => {
+          const state = get();
+          if (state.cv[field]?.trim() || state.cvSkipped.includes(field)) return;
+          set({ cvSkipped: [...state.cvSkipped, field] });
+        },
+
+        reset: () => {
+          set({ ...initialState });
+        },
+      };
+    },
     {
       name: "declic-session-v1",
-      version: 5,
+      version: 6,
       // v1 -> v2 : swipe adaptatif. v3 -> v4 : match de compétence + étape 2.
       // v4 -> v5 : questions CV réparties entre les entretiens, reprise possible.
-      migrate: (persisted) => {
+      // v5 -> v6 : skill matches en mémoire (« déjà fait »), entretiens par métier.
+      migrate: (persisted, version) => {
         const state = {
           generated: [],
           queue: [],
-          creuserAsked: [],
-          skillMatch: null,
-          matchedSkills: [],
           interviews: [],
           activeInterview: null,
           cv: {},
           cvSkipped: [],
+          skillMatches: [],
+          jobs: null,
           ...(persisted as object),
-        } as unknown as SessionState & { cvDone?: boolean };
-        delete state.cvDone;
-        state.interviews = state.interviews.map((i) => ({
-          ...i,
-          cvFields: i.cvFields ?? [],
-          step: i.step ?? 0,
-        }));
+        } as unknown as SessionState & Record<string, unknown>;
+        for (const old of ["cvDone", "skillMatch", "matchedSkills", "creuserAsked"]) delete state[old];
+
+        if (version < 6) {
+          // Les entretiens d'avant portaient sur une carte « creuser », pas sur un métier.
+          state.interviews = [];
+          state.activeInterview = null;
+          // Les « déjà fait » déjà donnés deviennent des skill matches.
+          const cards = new Map([...CARDS, ...state.generated].map((c) => [c.id, c]));
+          const matches: SkillMatch[] = [];
+          for (const r of state.responses ?? []) {
+            const card = cards.get(r.cardId);
+            if (!card || r.direction !== "right" || !isLived(r.reason)) continue;
+            if (card.target?.mode === "creuser" || matches.some((m) => m.cardId === card.id)) continue;
+            matches.push({ ...makeMatch(card, r.reason), at: r.ts, seen: true });
+          }
+          state.skillMatches = matches;
+        }
         return state;
       },
       // Les champs transitoires ne sont jamais persistés.
@@ -577,6 +654,8 @@ export const useSession = create<SessionState>()(
         delete rest.fetching;
         delete rest.failures;
         delete rest.awaitingExperience;
+        delete rest.toast;
+        delete rest.jobsLoading;
         return rest;
       },
     },

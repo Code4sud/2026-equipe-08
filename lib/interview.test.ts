@@ -10,13 +10,12 @@ import {
 } from "./interview";
 import { buildQuestionsPrompt, isUsableQuestion, writeQuestions } from "./interviewQuestions";
 
+const SKILL = { code: 300182, label: "Réparer un équipement, une machine, une installation" };
+
 const interview: Interview = {
-  cardId: "gen-creuser-300182-reparer-velo",
-  parentId: "reparer-velo",
-  parentText: "Réparer un vélo crevé",
-  proofText: "Et c'est toi qui trouvais d'où venait la panne ?",
-  macro: 300182,
-  skill: "Réparer un équipement, une machine, une installation",
+  id: "job:I1619",
+  job: { code: "I1619", label: "Mécanicien / Mécanicienne cycles" },
+  experiences: [{ cardId: "reparer-velo", text: "Réparer un vélo crevé", skill: SKILL }],
   questions: ["C'était quand ?", "Tu as fait quoi ?"],
   answers: ["L'été dernier, au quartier.", ""],
   cvFields: [],
@@ -24,32 +23,33 @@ const interview: Interview = {
   startedAt: 0,
 };
 
-describe("étape 2 — questions du projet", () => {
-  it("les questions de repli restent sur le projet et sont ouvertes", () => {
-    const questions = fallbackQuestions("Réparer un vélo crevé.");
+const questionInput = {
+  jobCode: interview.job.code,
+  jobLabel: interview.job.label,
+  experiences: [{ text: "Réparer un vélo crevé", skill: SKILL.code }],
+};
+
+describe("étape 2 — questions sur le métier", () => {
+  it("les questions de repli restent sur l'expérience et le métier", () => {
+    const questions = fallbackQuestions(interview.job.label, [{ text: "Réparer un vélo crevé." }]);
     expect(questions).toHaveLength(PROJECT_QUESTION_COUNT);
     expect(questions[0]).toContain("« Réparer un vélo crevé »");
+    expect(questions[2]).toContain("Mécanicien / Mécanicienne cycles");
     expect(questions.every(isUsableQuestion)).toBe(true);
   });
 
   it("sans LLM (mode mock), on retombe sur les questions de repli", async () => {
-    const out = await writeQuestions({
-      parentText: interview.parentText,
-      proofText: interview.proofText,
-      macro: interview.macro,
-    });
+    const out = await writeQuestions(questionInput);
     expect(out.source).toBe("template");
-    expect(out.questions).toEqual(fallbackQuestions(interview.parentText));
+    expect(out.questions).toEqual(fallbackQuestions(interview.job.label, questionInput.experiences));
   });
 
-  it("le prompt ne contient que les cartes et la compétence ROME", () => {
-    const prompt = buildQuestionsPrompt({
-      parentText: interview.parentText,
-      proofText: interview.proofText,
-      macro: interview.macro,
-    });
+  it("le prompt ne contient que le métier ROME, les cartes et leurs compétences", () => {
+    const prompt = buildQuestionsPrompt(questionInput);
+    expect(prompt).toContain("Mécanicien / Mécanicienne cycles");
+    expect(prompt).toContain("vélos"); // définition ROME du métier
     expect(prompt).toContain("Réparer un vélo crevé");
-    expect(prompt).toContain(interview.skill);
+    expect(prompt).toContain(SKILL.label);
   });
 
   it("accepte questions et consignes ouvertes, rejette ce qui sort du gabarit", () => {
@@ -86,10 +86,11 @@ describe("étape 2 — export vers le dossier (docs/DOSSIER.md)", () => {
     });
     expect(user.experience[0]).toMatchObject({
       title: "Réparer un vélo crevé",
-      competences: [interview.skill],
+      competences: [SKILL.label],
     });
     expect(user.experience[0].description).toContain("L'été dernier");
     expect(user.experience[1].description).toBe("Vendeur au marché deux étés");
+    expect(user.targetJobs).toEqual([interview.job]);
   });
 
   it("une réponse libre qui ne correspond à aucun choix reste brute", () => {

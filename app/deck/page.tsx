@@ -46,18 +46,30 @@ export default function DeckPage() {
   const generated = useSession((s) => s.generated);
   const awaitingExperience = useSession((s) => s.awaitingExperience);
   const answerExperience = useSession((s) => s.answerExperience);
-  const skillMatch = useSession((s) => s.skillMatch);
-  const dismissSkillMatch = useSession((s) => s.dismissSkillMatch);
-  const startInterview = useSession((s) => s.startInterview);
+  const skillMatches = useSession((s) => s.skillMatches);
+  const toast = useSession((s) => s.toast);
+  const dismissToast = useSession((s) => s.dismissToast);
+  const resolvePendingSkills = useSession((s) => s.resolvePendingSkills);
   const interviews = useSession((s) => s.interviews);
   // Récit commencé puis quitté : on peut le reprendre au même écran.
   const unfinished = interviews.findLast((i) => !i.finishedAt && i.questions.length > 0);
+  const unseenMatches = skillMatches.filter((m) => !m.seen).length;
+  const toastMatch = toast ? skillMatches.find((m) => m.cardId === toast) : null;
 
   const shownAt = useRef(0);
 
   useEffect(() => {
     ensureCard();
-  }, [ensureCard]);
+    // Matchs dont la compétence ROME n'a pas encore pu être résolue.
+    resolvePendingSkills();
+  }, [ensureCard, resolvePendingSkills]);
+
+  // La notification s'efface seule : elle ne bloque jamais le swipe.
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(dismissToast, 4500);
+    return () => clearTimeout(timer);
+  }, [toast, dismissToast]);
 
   useEffect(() => {
     shownAt.current = Date.now();
@@ -84,17 +96,12 @@ export default function DeckPage() {
     lastResponse?.kind === "card" ? responses[lastResponse.index] : null;
   // Après un non : puces optionnelles. Après un oui : « déjà fait ? » (voir plus bas).
   const showReasons =
-    !pending && !skillMatch && !awaitingExperience && lastCardResponse?.direction === "left";
+    !pending && !awaitingExperience && lastCardResponse?.direction === "left";
   const lastCard = lastCardResponse
     ? allCards.find((c) => c.id === lastCardResponse.cardId)
     : null;
   const isCreuser = card?.target?.mode === "creuser";
-  const blocked = Boolean(pending) || Boolean(skillMatch) || awaitingExperience;
-
-  const matchCard = skillMatch ? allCards.find((c) => c.id === skillMatch) : null;
-  const matchParent = matchCard?.target?.parentId
-    ? allCards.find((c) => c.id === matchCard.target?.parentId)
-    : null;
+  const blocked = Boolean(pending) || awaitingExperience;
 
   const pendingCenter = pending ? CENTER_BY_ID[pending] : null;
   const pendingCards =
@@ -115,9 +122,14 @@ export default function DeckPage() {
     router.push("/style");
   }
 
-  function goCreuser(cardId: string) {
-    startInterview(cardId);
+  function resumeInterview(id: string) {
+    useSession.setState({ activeInterview: id });
     router.push("/creuser");
+  }
+
+  function goMatches() {
+    dismissToast();
+    router.push("/matchs");
   }
 
   if (!mounted) {
@@ -136,6 +148,9 @@ export default function DeckPage() {
           confidence={avgConfidence}
           onBack={() => router.push("/")}
           onReset={restart}
+        matches={skillMatches.length}
+        unseen={unseenMatches}
+        onMatches={goMatches}
         />
         <div className="flex flex-1 flex-col items-center justify-center text-center">
           <div className="grid h-20 w-20 place-items-center rounded-full bg-mint text-4xl">
@@ -180,6 +195,9 @@ export default function DeckPage() {
         confidence={avgConfidence}
         onBack={() => router.push("/")}
         onReset={restart}
+        matches={skillMatches.length}
+        unseen={unseenMatches}
+        onMatches={goMatches}
       />
 
       <div className="mt-4 flex items-center justify-between text-[11px] font-bold uppercase tracking-widest text-ink/40">
@@ -277,10 +295,10 @@ export default function DeckPage() {
 
         {unfinished && !blocked && !showReasons && (
           <button
-            onClick={() => goCreuser(unfinished.cardId)}
+            onClick={() => resumeInterview(unfinished.id)}
             className="mt-3 w-full truncate rounded-full bg-mint px-4 py-2.5 text-center text-xs font-bold text-ink"
           >
-            Reprendre ton récit : « {unfinished.parentText} » →
+            Reprendre ton récit : {unfinished.job.label} →
           </button>
         )}
 
@@ -295,21 +313,19 @@ export default function DeckPage() {
       </div>
 
       <AnimatePresence>
-        {matchCard?.target && (
-          <SkillMatchOverlay
-            key="skill-match"
-            skill={matchCard.target.label}
-            parentText={matchParent?.text}
-            proofText={matchCard.text}
-            emoji={matchCard.emoji}
-            onCreuser={() => goCreuser(matchCard.id)}
-            onContinue={dismissSkillMatch}
+        {toastMatch && (
+          <MatchToast
+            key={toastMatch.cardId}
+            text={toastMatch.text}
+            emoji={toastMatch.emoji}
+            onOpen={goMatches}
+            onClose={dismissToast}
           />
         )}
       </AnimatePresence>
 
       <AnimatePresence>
-        {pendingCenter && !skillMatch && !awaitingExperience && (
+        {pendingCenter && !awaitingExperience && (
           <ConfirmationOverlay
             title={pendingCenter.short}
             label={pendingCenter.label}
@@ -327,11 +343,17 @@ function Header({
   confidence,
   onBack,
   onReset,
+  matches,
+  unseen,
+  onMatches,
 }: {
   count: number;
   confidence: number;
   onBack: () => void;
   onReset: () => void;
+  matches: number;
+  unseen: number;
+  onMatches: () => void;
 }) {
   const pct = Math.min(100, Math.round((count / TARGET) * 100));
   const countLabel = count >= TARGET ? `${count} réponses` : `${count}/${TARGET}`;
@@ -358,9 +380,21 @@ function Header({
         <span className="text-xs font-black uppercase tracking-[0.2em]">
           Orientis
         </span>
-        <span className="text-right text-xs font-bold text-ink/40">
-          {countLabel}
-        </span>
+        {/* Menu « Mes matchs » : pastille = matchs pas encore vus. */}
+        <button
+          onClick={onMatches}
+          aria-label={`Mes matchs (${matches})`}
+          className="relative flex h-9 items-center gap-1.5 rounded-full border border-ink/20 px-3 text-xs font-bold text-ink/70 hover:text-ink"
+        >
+          <span aria-hidden>★</span>
+          Mes matchs
+          {matches > 0 && <span className="text-ink/40">{matches}</span>}
+          {unseen > 0 && (
+            <span className="absolute -right-1.5 -top-1.5 grid h-5 min-w-5 place-items-center rounded-full bg-accent px-1 text-[10px] font-black text-paper">
+              {unseen}
+            </span>
+          )}
+        </button>
       </div>
 
       <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-ink/10">
@@ -370,7 +404,7 @@ function Header({
         />
       </div>
       <div className="mt-2 flex items-center justify-between text-[10px] font-semibold uppercase tracking-widest text-ink/35">
-        <span>on apprend à te connaître</span>
+        <span>{countLabel} · on apprend à te connaître</span>
         <span>{Math.round(confidence * 100)} % de confiance</span>
       </div>
     </header>
@@ -558,92 +592,55 @@ function ConfirmationOverlay({
 }
 
 /**
- * Match de compétence : le jeune a dit « déjà fait », puis « oui, c'est moi »
- * sur la question qui creuse ce vécu. On lui montre la compétence ROME
- * prouvée et on lui propose d'en parler (étape 2), sans l'y obliger.
+ * « C'est un skill match ! » : un « déjà fait » vient d'être gardé en mémoire.
+ * Notification en haut d'écran, qui s'efface seule et ne bloque pas le swipe ;
+ * un tap ouvre « Mes matchs ».
  */
-function SkillMatchOverlay({
-  skill,
-  parentText,
-  proofText,
+function MatchToast({
+  text,
   emoji,
-  onCreuser,
-  onContinue,
+  onOpen,
+  onClose,
 }: {
-  skill: string;
-  parentText?: string;
-  proofText: string;
+  text: string;
   emoji?: string;
-  onCreuser: () => void;
-  onContinue: () => void;
+  onOpen: () => void;
+  onClose: () => void;
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 flex items-end justify-center bg-ink/70 p-4 backdrop-blur-sm sm:items-center"
+      initial={{ y: -80, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      exit={{ y: -80, opacity: 0 }}
+      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+      className="fixed inset-x-0 z-40 mx-auto w-full max-w-md px-4"
+      style={{ top: "calc(env(safe-area-inset-top, 0px) + 12px)" }}
+      role="status"
     >
-      <motion.div
-        initial={{ y: 60, scale: 0.96 }}
-        animate={{ y: 0, scale: 1 }}
-        exit={{ y: 40, scale: 0.97 }}
-        transition={{ type: "spring", stiffness: 300, damping: 26 }}
-        className="w-full max-w-md overflow-hidden rounded-[30px] border-2 border-ink bg-paper"
-      >
-        <div className="bg-mint px-6 pb-5 pt-6">
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-ink/60">
-              C&apos;est un match
-            </p>
-            {emoji && <span className="text-2xl">{emoji}</span>}
-          </div>
-          <p className="mt-3 text-xs font-bold uppercase tracking-widest text-ink/50">
-            Compétence repérée
+      <div className="hard-shadow-sm flex items-center gap-3 rounded-[22px] border-2 border-ink bg-mint py-2.5 pl-3 pr-2">
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-paper/70 text-xl">
+          {emoji ?? "★"}
+        </span>
+        <button onClick={onOpen} className="min-w-0 flex-1 text-left">
+          <p className="text-[11px] font-black uppercase tracking-[0.18em] text-ink/70">
+            C&apos;est un skill match !
           </p>
-          <h2 className="mt-1 text-2xl font-black leading-tight tracking-tight">
-            {skill}
-          </h2>
-        </div>
-
-        <div className="px-6 py-5">
-          <p className="text-xs font-bold uppercase tracking-widest text-ink/40">
-            Ce qui le prouve
-          </p>
-          <ul className="mt-3 space-y-2">
-            {parentText && (
-              <li className="flex items-start gap-2 text-sm font-medium text-ink/75">
-                <span className="mt-0.5 text-accent">✓</span>
-                <span>Déjà fait : « {parentText} »</span>
-              </li>
-            )}
-            <li className="flex items-start gap-2 text-sm font-medium text-ink/75">
-              <span className="mt-0.5 text-accent">✓</span>
-              <span>Oui, c&apos;est toi : « {proofText} »</span>
-            </li>
-          </ul>
-
-          <p className="mt-5 text-xs leading-relaxed text-ink/45">
-            Raconte-nous comment ça s&apos;est passé : 2 minutes, à l&apos;écrit
-            ou à voix haute. On s&apos;en sert pour écrire ton CV.
-          </p>
-
-          <div className="mt-5 grid gap-2">
-            <button
-              onClick={onCreuser}
-              className="hard-shadow-sm rounded-full border-2 border-ink bg-ink px-5 py-3.5 text-sm font-bold text-paper"
-            >
-              Creuser →
-            </button>
-            <button
-              onClick={onContinue}
-              className="rounded-full border border-ink/25 px-5 py-3 text-sm font-semibold text-ink/60"
-            >
-              Continuer à swiper
-            </button>
-          </div>
-        </div>
-      </motion.div>
+          <p className="truncate text-sm font-semibold text-ink">« {text} »</p>
+        </button>
+        <button
+          onClick={onOpen}
+          className="shrink-0 rounded-full bg-ink px-3 py-2 text-xs font-bold text-paper"
+        >
+          Voir
+        </button>
+        <button
+          onClick={onClose}
+          aria-label="Fermer"
+          className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-sm text-ink/50 hover:text-ink"
+        >
+          ✕
+        </button>
+      </div>
     </motion.div>
   );
 }
