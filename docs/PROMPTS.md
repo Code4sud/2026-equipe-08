@@ -1,10 +1,17 @@
 # Prompts IA — audit et guide de réglage
 
-> But : savoir exactement ce qui entre dans Claude, ce qui n'entre pas, et où
-> modifier les prompts sans casser les garde-fous.
+> **État au 19/11/2026.** Cinq appels produit, chacun avec son prompt, son
+> schéma et son repli :
 >
-> **État au 19/11/2026.** Trois appels produit, pas quatre : le CV et les
-> emails sont deux champs d'un même appel « dossier ».
+> 1. carte adaptative ;
+> 2. questions de l'étape 2 « Creuser » ;
+> 3. synthèse du dossier ;
+> 4. CV ciblé sur une offre ;
+> 5. emails de candidature.
+>
+> Le CV et les emails ne sont plus deux champs d'un appel géant. Le dossier
+> peut recevoir une section IA, deux, ou aucune : chaque section absente garde
+> son texte déterministe.
 
 ## Voir les prompts réels
 
@@ -13,8 +20,8 @@ npm run prompts
 ```
 
 Affiche les prompts système + utilisateur construits avec le persona de démo,
-**sans appeler l'IA**. Le dump du dossier contient les réponses d'entretien :
-local uniquement, ne pas partager.
+**sans appeler l'IA**, puis un bloc « ce qui part à l'IA ». Le dump est local et
+contient les faits du persona, jamais les réponses brutes d'entretien.
 
 Pour voir aussi les réponses de Claude :
 
@@ -32,11 +39,11 @@ npm run dev
 Le journal contient le system prompt, le prompt utilisateur, le JSON schema,
 le modèle, l'effort, les réponses et les erreurs. `.llm-debug/` est gitignoré.
 **Il contient des données personnelles : local uniquement, à supprimer après
-réglage.**
+réglage.** Le journal est désactivé sur Vercel.
 
 Modèle par défaut : `sonnet`. Surcharge : `LLM_MODEL=...`. Effort :
 `LLM_EFFORT=low|medium|high` (défaut `low`). Timeouts : 30 s pour les cartes
-et questions, 45 s pour le dossier, `maxDuration = 60` sur la route.
+et questions, 45 s par section du dossier, `maxDuration = 60` sur la route.
 
 ---
 
@@ -46,11 +53,16 @@ et questions, 45 s pour le dossier, `maxDuration = 60` sur la route.
 |---|---|---|---|---|
 | 1 | Carte adaptative | `POST /api/card` → `lib/adaptive/writer.ts` | `{ text, hint, emoji, macro }` | 1 appel, 1 relance si mode incorrect |
 | 2 | Questions « Creuser » | `POST /api/questions` → `lib/interviewQuestions.ts` | 3 questions ouvertes | 1 appel |
-| 3 | Dossier : synthèse + **CV** + **emails** | `POST /api/dossier` → `lib/dossier/*` | `Narrative` JSON | 1 appel pour tout |
-| 4 | Test de connexion Claude | `POST /api/config` `{test:true}` | `{ok,error}` | 1 micro-appel, hors produit |
+| 3 | Synthèse | `POST /api/dossier` → `lib/dossier/prompts.ts` | `SynthesisNarrative` | 1 appel |
+| 4 | CV ciblé | `POST /api/dossier` → `lib/dossier/prompts.ts` | `CvNarrative` | 1 appel |
+| 5 | Emails | `POST /api/dossier` → `lib/dossier/prompts.ts` | `EmailsNarrative` | 1 appel |
 
-Le mode `mock` (défaut sur Vercel) **n'appelle jamais l'IA** : les replis
-déterministes sont utilisés. `/api/config` renvoie `backend:"mock"`.
+La route dossier lance les appels 3–5 en parallèle. Si un appel échoue, les
+deux autres peuvent quand même être renvoyés. Le client applique les sections
+présentes.
+
+Le mode `mock` (défaut sur Vercel) **n'appelle jamais l'IA**. Aucune narrative
+n'est renvoyée : le dossier, le CV et les emails déterministes restent affichés.
 
 ---
 
@@ -59,8 +71,7 @@ déterministes sont utilisés. `/api/config` renvoie `backend:"mock"`.
 ### Qui décide quoi
 
 - Le **code** choisit le mode (`explorer` / `creuser`), le centre, la ou les
-  compétences candidates, la carte parente et le focus. Il ne laisse pas le
-  LLM choisir le domaine.
+  compétences candidates, la carte parente et le focus.
 - Le **LLM** écrit la phrase, le hint et l'emoji ; en mode multi-candidats, il
   choisit un `macro` **dans la liste fournie**, et le serveur vérifie.
 - Si le LLM échoue, sort du schéma ou écrit une question en mode explorer :
@@ -145,23 +156,12 @@ En mode `creuser`, le prompt ajoute la carte parente et la consigne
 
 ### Cache et relance
 
-- Cache mémoire `Map`, clé = mode + codes candidats + focus + carte parente +
-  **liked**. **`disliked` et `recent` ne sont pas dans la clé** : deux jeunes
-  avec les mêmes « oui » mais des « non » différents peuvent recevoir la même
-  carte. À corriger si on garde le cache.
+- Cache mémoire, clé = mode + codes candidats + focus + carte parente +
+  `liked` + `disliked` + `recent` (tout le contexte envoyé au LLM).
 - Si le LLM écrit une question en mode explorer, une seule relance avec un
   feedback ; sinon repli.
 - Le serveur vérifie que `macro` est dans la short-list, que le texte fait
   4–120 caractères, le hint ≤ 100, un seul emoji, et le mode.
-
-### Pistes de réglage
-
-- Ajouter un **résumé de profil** compact (3 domaines, 3 traits) pour ancrer la
-  carte, sans envoyer les scores bruts ? Risque : enfermer le jeune dans son
-  profil. À tester.
-- Inclure `disliked` et `recent` dans la clé de cache (ou supprimer le cache).
-- Le prompt est déjà très contraint ; les gains seront surtout sur les
-  **exemples** et le ton, pas sur plus de règles.
 
 ---
 
@@ -217,49 +217,44 @@ Compétences fines (pour orienter, sans les citer) :
 
 - Cache mémoire par `(parentText, proofText, macro)`.
 - Repli : 3 questions génériques contexte / action / résultat.
-- Piste : ajouter le **niveau d'études** ou le **domaine** pour ajuster le
-  vocabulaire ? Non recommandé : le prompt actuel est déjà bien cadré et
-  l'ajout de données personnelles n'apporte rien.
+- Le validateur vérifie la longueur **et** le caractère ouvert : une question
+  fermée du type « T'as déjà réparé ? » est rejetée, une consigne
+  « Raconte étape par étape… » est acceptée.
 
 ---
 
-## 3. Dossier : synthèse + CV + emails
+## 3. Synthèse du dossier
 
-Source : `app/api/dossier/route.ts`, `lib/dossier/prompts.ts`,
-`lib/dossier/narrative.ts`, `lib/dossier/build.ts`.
+Source : `app/api/dossier/route.ts`, `lib/dossier/prompts.ts` — section 1.
 
 ### System prompt
 
 ```text
-Tu écris un dossier de restitution pour un jeune de 17 à 25 ans
-accompagné par une mission locale ou un centre d'orientation.
+Tu écris la synthèse d'un dossier d'orientation pour un jeune de 17 à 25 ans accompagné par une mission locale ou un centre d'orientation.
 
 Règles absolues :
-- Tu ne dois JAMAIS inventer d'entreprise, d'école, d'offre, de salaire ou de formation.
-- Tu utilises uniquement les faits fournis. Si une information manque, tu ne l'inventes pas.
-- Chaque affirmation importante doit citer un id de preuve, d'offre ou de formation fourni.
-- Tu ne fais aucune déduction sur la santé, le handicap, l'origine, la famille, la religion,
-  l'orientation sexuelle, les opinions politiques ou la situation administrative.
-- Tu ne diagnostiques pas de personnalité. Tu parles de préférences de travail.
+- Tu ne dois JAMAIS inventer d'entreprise, d'école, d'offre, de salaire, de date ou de formation.
+- Tu utilises uniquement les faits fournis. Si une information manque, tu ne l'inventes pas et tu ne la complètes pas par une supposition.
+- Tu ne fais aucune déduction sur la santé, le handicap, l'origine, la famille, la religion, l'orientation sexuelle, les opinions politiques ou la situation administrative.
+- Tu ne diagnostiques pas de personnalité. Tu parles de préférences de travail et de compétences observées.
 - Tu ne promets pas de réussite et tu n'affiches pas de probabilité.
 - Ton direct, respectueux, jamais infantilisant. Français, phrases courtes.
 - Tu réponds uniquement via le JSON schema fourni.
 
-Le champ "cv" est un CV : première personne ou neutre, jamais "tu".
-Le champ "emails" contient des brouillons de candidature : vouvoiement de l'entreprise,
-aucune adresse de contact inventée, signature avec des espaces réservés ([Prénom], [email],
-[téléphone]) que le jeune remplit lui-même.
-```
+Le dossier s'adresse au jeune : tutoiement, sans jargon ROME. Il doit répondre à « je fais quoi lundi ? » avant de répondre à « quel est mon profil ».
 
-> Les deux dernières phrases ont été ajoutées pendant cet audit. Avant, le
-> prompt ne distinguait pas le ton du CV et des emails.
+Champs :
+- "headline" : 4 à 8 mots, concret, pas un slogan.
+- "summary" : 3 à 5 phrases. Ce qui ressort, ce qui pourrait accrocher, ce qui reste à vérifier. Pas de diagnostic.
+- "strengths" : 3 à 5 points forts. Chaque point cite des "evidenceIds" fournis. Si aucun id ne correspond, laisse le tableau vide.
+- "directions" : exactement les ids fournis, avec un "why" qui reprend les preuves et un "watchout" qui reformule la friction fournie. N'invente pas de vigilance.
+- "trainings" : uniquement les ids fournis, avec un "why" qui utilise le niveau, la durée, l'alternance, les prérequis et les débouchés fournis.
+- "nextSteps" : 3 actions concrètes et faisables cette semaine. Cite un evidenceId seulement s'il est fourni.
+```
 
 ### User prompt
 
-`buildDossierPrompt(facts)` = le JSON des faits, puis
-« Rédige la narrative du dossier. »
-
-### Faits envoyés (schéma exact)
+`buildSynthesisPrompt(facts)` envoie en JSON :
 
 ```json
 {
@@ -274,143 +269,253 @@ aucune adresse de contact inventée, signature avec des espaces réservés ([Pr�
     {
       "id": "manual",
       "title": "Manuel",
-      "jobs": [{"code":"H2911","label":"Métallier / Métallière","level":"Bac pro / Bac","competences":["..."]}],
-      "evidence": [{"id":"ev-manual-1","text":"Réparer un vélo crevé"}]
+      "jobs": [{
+        "code": "H2911",
+        "label": "Métallier / Métallière",
+        "level": "CAP / BEP",
+        "competences": ["..."],
+        "savoirEtre": ["..."],
+        "friction": ["Port de charges lourdes"]
+      }],
+      "evidence": [{"id":"ev-manual-1","text":"Réparer un vélo crevé"}],
+      "watchout": "Port de charges lourdes"
     }
   ],
-  "trainings": [
-    {"id":"tr-cap-metallier","title":"CAP Métallier","level":"CAP","duration":"24 mois","establishments":["Lycée professionnel Les Eucalyptus"]}
-  ],
-  "offers": [
-    {"id":"off-metallier-paillon","title":"Métallier / Métallière","company":"Atelier du Paillon","city":"Nice"}
-  ],
+  "trainings": [{
+    "id":"tr-cap-metallier",
+    "title":"CAP Métallier",
+    "level":"CAP",
+    "duration":"24 mois",
+    "establishments":["Lycée professionnel Les Eucalyptus"],
+    "jobs":["Métallier / Métallière"],
+    "debouches":["Métallier / Métallière"],
+    "prerequisites":["Aucun diplôme requis","Goût pour le travail manuel"],
+    "alternance":true,
+    "cost":"Gratuit en alternance",
+    "why":"..."
+  }],
   "user": {
     "age": 19,
     "studiesLevel": "CAP / BEP",
     "status": "Recherche d'emploi / formation",
-    "experience": [
-      {"title":"Réparer un vélo crevé","detail":"[RÉPONSES D'ENTRETIEN — voir ci-dessous]"}
-    ],
+    "city": "Nice",
+    "availability": "immédiatement",
     "mobilityKm": 20,
-    "city": "Nice"
+    "contracts": ["CDI","CDD","Alternance"],
+    "alternance": true,
+    "driverLicense": false
   }
 }
 ```
 
-**Le `detail` des expériences contient les réponses d'entretien brutes**
-(question + réponse, concaténées). C'est le point sensible.
+Puis : « Rédige la synthèse, les directions, les formations et le plan d'action. »
 
-### Schéma de sortie
+---
 
-```ts
+## 4. CV ciblé
+
+Source : `lib/dossier/prompts.ts` — section 2, `lib/dossier/cv.ts`.
+
+Le CV n'est plus un champ « bullets » vague : c'est une trame complète avec
+en-tête, profil, expériences traduites, compétences techniques et soft,
+formation, langues, centres d'intérêt, disponibilité et champs à compléter.
+
+### System prompt
+
+```text
+Tu écris un CV français pour un jeune de 17 à 25 ans. Le CV est ciblé sur UNE offre précise : "cvTarget".
+
+Règles absolues :
+- Tu ne dois JAMAIS inventer d'entreprise, d'école, d'offre, de salaire, de date ou de formation.
+- Tu utilises uniquement les faits fournis. Si une information manque, tu ne l'inventes pas et tu ne la complètes pas par une supposition.
+- Tu ne fais aucune déduction sur la santé, le handicap, l'origine, la famille, la religion, l'orientation sexuelle, les opinions politiques ou la situation administrative.
+- Tu ne diagnostiques pas de personnalité. Tu parles de préférences de travail et de compétences observées.
+- Tu ne promets pas de réussite et tu n'affiches pas de probabilité.
+- Ton direct, respectueux, jamais infantilisant. Français, phrases courtes.
+- Tu réponds uniquement via le JSON schema fourni.
+
+Le CV doit ressembler à un vrai CV, pas à un journal de bord :
+- "title" : l'intitulé du poste ciblé, repris de cvTarget. Pas de slogan.
+- "summary" : 2 à 3 phrases, à la première personne, qui relient le profil au poste et à l'entreprise ciblés. Cite deux compétences ou expériences fournies. Pas de « je suis motivé » vide.
+- "experiences" : uniquement les expériences fournies, avec leur "experienceId" exact.
+  - Transforme chaque expérience en 1 à 3 puces de CV.
+  - Commence par un verbe d'action ou un nom d'action (« Réparation… », « Organisation… », « Accueil… »).
+  - Décris ce qui a été fait, avec le résultat seulement s'il est fourni.
+  - Traduis le langage parlé en compétences professionnelles transférables au poste ciblé.
+  - Ne recopie JAMAIS une question d'entretien, une réponse brute, « j'aime », « je répare des karts », ou une hésitation.
+  - Ne prétends pas que le jeune a fait une tâche absente des faits.
+- "softSkills" et les "softSkills" de chaque expérience : choisis uniquement dans la liste "softSkills" fournie (maximum 4 au total, 2 par expérience). Chaque soft skill doit être adossée à un fait : compétence ROME, préférence de travail ou expérience. Les "savoirEtre" de cvTarget sont les attentes de l'entreprise : tu peux les reprendre seulement si un fait les soutient. Pas de diagnostic de personnalité.
+- "languages" et "interests" : uniquement si les faits les contiennent. Sinon, tableaux vides. N'invente pas de langue ni de hobby.
+- Le prénom, l'email et le téléphone sont ajoutés côté client : ne les invente pas et ne les écris pas.
+- Pas d'âge, pas de photo, pas de situation familiale, pas d'adresse complète.
+
+Le CV doit rester honnête : une trame que le jeune relit et complète, pas une biographie inventée.
+```
+
+### User prompt
+
+`buildCvPrompt(facts)` envoie :
+
+```json
 {
-  headline: string,
-  summary: string,
-  strengths: { label, evidenceIds[] }[],
-  directions: { id, why, watchout }[],
-  trainings: { id, why }[],
-  cv: { title, summary, bullets[] },
-  emails: { offerId, subject, body }[],
-  nextSteps: { title, detail, evidenceIds[] }[]
+  "cvTarget": {
+    "offerId": "off-metallier-paillon",
+    "jobCode": "H2911",
+    "jobLabel": "Métallier / Métallière",
+    "romeLabel": "Métallier / Métallière",
+    "company": "Atelier du Paillon",
+    "city": "Nice",
+    "contract": "CDI",
+    "salary": "1 900 – 2 200 € brut",
+    "competences": ["Assembler des éléments de structures métalliques", "..."],
+    "savoirEtre": ["Faire preuve d'autonomie", "Faire preuve de rigueur et de précision"]
+  },
+  "user": {
+    "studiesLevel": "CAP / BEP",
+    "status": "Recherche d'emploi / formation",
+    "city": "Nice",
+    "mobilityKm": 20,
+    "contracts": ["CDI", "CDD", "Alternance"],
+    "availability": "immédiatement",
+    "alternance": true,
+    "driverLicense": false,
+    "experience": [
+      {
+        "id": "cv-1",
+        "title": "Réparer un vélo crevé",
+        "proof": "Sur le vélo crevé, t'as cherché toi-même où était le trou ?",
+        "competences": ["Réparer un équipement, une machine, une installation"],
+        "source": "creuser"
+      }
+    ]
+  },
+  "profile": {
+    "code": "RIC",
+    "domains": [{"id":"manual","label":"Manuel","score":0.909,"confirmed":true}],
+    "traits": [{"label":"Besoin de structure","value":"Cadre clair","confidence":1}],
+    "strengths": ["Manuel"],
+    "unknowns": ["Service public","Dessin","Règles","Chiffres"]
+  },
+  "trainings": [{"id":"tr-cap-metallier","title":"CAP Métallier","level":"CAP","duration":"24 mois","establishments":["Lycée professionnel Les Eucalyptus"],"jobs":["Métallier / Métallière"],"debouches":["Métallier / Métallière"],"prerequisites":["Aucun diplôme requis"],"alternance":true,"cost":"Gratuit en alternance","why":"..."}],
+  "softSkills": ["Autonomie","Rigueur","Organisation","Travail en équipe","..."]
 }
 ```
 
-### Ce que reçoit le CV
+Puis : « Rédige le CV ciblé. »
 
-- `user.age`, `user.studiesLevel` (libellé humain), `user.status` (libellé),
-  `user.experience[].title` + `detail`, `user.city`, `user.mobilityKm`.
-- Le profil, les directions, les formations, les offres.
-- **Pas** : prénom, nom, email, téléphone, permis, contrats acceptés,
-  disponibilité, alternance. Le contact et les sections du CV sont
-  déterministes ; l'IA ne remplace que `cv.title/summary/bullets`.
-- **Pas** de règle de citation sur le CV ; le validateur ne vérifie que les
-  `evidenceIds` des forces/étapes, pas les affirmations du CV.
+### Ce que l'IA ne reçoit pas
 
-### Ce que reçoit l'email
+- prénom, nom, email, téléphone ;
+- âge, adresse complète, code postal ;
+- réponses brutes d'entretien : seuls le titre de l'expérience, la question
+  de vécu et les compétences ROME validées sont envoyés ;
+- entreprises / écoles hors faits ;
+- dates ou durées non fournies.
 
-- `offers[]` : uniquement `id`, `title`, `company`, `city`.
-- Le profil, les directions (preuves), les expériences.
-- **Pas** : le code ROME de l'offre, ses compétences, le contrat, le salaire,
-  l'URL, le contact de l'entreprise, le prénom/email/téléphone du jeune.
-- L'IA écrit `subject` + `body` ; `applyNarrative` remplace le corps
-  déterministe (qui contenait la signature et les coordonnées) par le corps
-  IA. D'où la consigne de placeholders ajoutée au system prompt.
-- Aucun envoi automatique. `to` reste l'email de l'offre (ou vide).
+### Repli déterministe
 
-### Ce que reçoivent les directions / formations
+`lib/dossier/cv.ts` construit déjà un CV complet sans IA :
 
-- Directions : titre, métiers, 4 compétences, preuves. **Pas** la friction ni
-  le `watchout` déterministe ; l'IA peut donc inventer un point de vigilance.
-- Formations : titre, niveau, durée, établissements. **Pas** le lien avec le
-  métier, les prérequis, les débouchés, le coût, l'alternance.
-- `headline` sert à la fois de titre de synthèse et de titre du plan d'action.
-- `nextSteps` remplace les 3 étapes déterministes ; les contacts sont
-  réalignés par index, ce qui peut décaler un contact si l'IA change l'ordre.
-
-### Validation
-
-- `validateNarrative` filtre les directions/formations/offres inconnues et les
-  `evidenceIds` inconnus.
-- Il **ne vérifie pas** les affirmations du CV, des emails ou des `watchout`.
-- Les faits arrivent du client **sans validation Zod** dans la route.
-  En démo locale, c'est acceptable ; avant une mise en production, ajouter un
-  schéma runtime + un consentement.
-
-### Pistes de réglage (par impact)
-
-1. **Trancher la politique « réponses brutes »** :
-   - soit on les envoie, avec un consentement IA explicite et une mise à jour
-     de `docs/DOSSIER.md` (le « récit brut jamais envoyé » n'est plus vrai) ;
-   - soit on envoie une **synthèse validée par le jeune** (1–2 phrases + la
-     compétence ROME), et les réponses brutes restent locales. C'est plus
-     conforme au brief, mais il faut un écran de validation du bullet CV.
-2. **Séparer le dossier en 2–3 appels** (`synthèse`, `CV`, `emails`) pour
-   pouvoir régler chaque ton et chaque schéma indépendamment. Coût : 2 appels
-   de plus, latence. Alternative : garder un appel mais ajouter des sections
-   explicites « CV » / « EMAIL » dans le prompt.
-3. **Enrichir les faits email** : code ROME de l'offre, compétences, contrat,
-   salaire, contact, et les preuves du métier. Ajouter une règle « 120–180
-   mots, 2 preuves, disponibilité, signature avec placeholders ».
-4. **Enrichir les faits CV** : `firstName` (ou placeholder), permis, contrats,
-   disponibilité, alternance, et le lien formation ↔ métier.
-5. **Ajouter la friction / le `watchout`** aux faits de direction, pour que
-   l'IA reformule au lieu d'inventer.
-6. **Post-valider** : aucun nom propre inventé, aucune adresse inventée,
-   CV sans « tu », emails sans « je suis disponible immédiatement » si la
-   donnée manque.
-7. **Séparer `headline`** en `synthesisHeadline` / `actionPlanHeadline`, ou
-   garder le plan d'action déterministe.
-8. **Cache carte** : inclure `disliked` et `recent` dans la clé.
-9. **Zod + consentement** sur `/api/dossier` ; limiter la taille des faits.
-10. **Ne pas journaliser** `.llm-debug` en production ; il contient des
-    réponses personnelles.
+- sélectionne la meilleure offre (ou celle choisie dans l'interface) ;
+- transforme `Réparer un vélo crevé` en `Réparation d'un vélo crevé` ;
+- utilise les compétences ROME comme savoir-faire ;
+- choisit des soft skills dans un vocabulaire contrôlé, adossées aux traits et
+  aux compétences ;
+- remplit l'en-tête, la formation liée au métier, les langues et centres
+  d'intérêt avec `[À compléter]` si l'info manque ;
+- affiche une checklist des champs à compléter.
 
 ---
 
-## 4. Test de connexion
+## 5. Emails de candidature
 
-`POST /api/config` avec `{test:true}` envoie :
+Source : `lib/dossier/prompts.ts` — section 3.
+
+### System prompt
 
 ```text
-System : Tu réponds uniquement avec le JSON demandé, sans texte autour.
-User   : Réponds avec {"ok":"yes"}.
+Tu écris des brouillons d'email de candidature pour un jeune de 17 à 25 ans. Chaque email vise UNE offre fournie.
+
+Règles absolues :
+- Tu ne dois JAMAIS inventer d'entreprise, d'école, d'offre, de salaire, de date ou de formation.
+- Tu utilises uniquement les faits fournis. Si une information manque, tu ne l'inventes pas et tu ne la complètes pas par une supposition.
+- Tu ne fais aucune déduction sur la santé, le handicap, l'origine, la famille, la religion, l'orientation sexuelle, les opinions politiques ou la situation administrative.
+- Tu ne diagnostiques pas de personnalité. Tu parles de préférences de travail et de compétences observées.
+- Tu ne promets pas de réussite et tu n'affiches pas de probabilité.
+- Ton direct, respectueux, jamais infantilisant. Français, phrases courtes.
+- Tu réponds uniquement via le JSON schema fourni.
+
+Règles des emails :
+- Vouvoiement de l'entreprise. Jamais « tu ».
+- 120 à 180 mots par email. Structure : Bonjour, le poste visé, deux phrases de preuve reliées aux compétences de l'offre, la disponibilité, une phrase de clôture, la signature.
+- Reprends le titre du poste et le nom de l'entreprise fournis. Ne cite aucune autre entreprise.
+- Appuie-toi sur les compétences de l'offre et les preuves du dossier. Ne recopie pas les réponses d'entretien.
+- Utilise la disponibilité et la mobilité fournies. Ne promets pas une date qui n'est pas dans les faits.
+- Aucune adresse email, aucun numéro de téléphone, aucun lien inventé. La signature se termine par des espaces réservés : [Prénom], [email], [téléphone].
+- Objet : « Candidature — {titre du poste} ({entreprise}) ».
+- Le corps commence par « Bonjour, » et se termine par la signature. Pas de markdown, pas de puces.
+- Renvoie exactement un email par "offerId" fourni, avec le bon "offerId".
 ```
 
-Ce n'est pas un prompt produit ; il sert au panneau de démo. Il peut être
-appelé publiquement et lancer un `claude -p` local : coût/abus possible si le
-serveur est exposé sur le réseau.
+### User prompt
+
+`buildEmailsPrompt(facts)` envoie `cvTarget`, toutes les `offers` (titre,
+entreprise, ville, code ROME, contrat, salaire, contact, URL, compétences),
+les `directions` (preuves + friction) et le `user` (niveau, statut, ville,
+mobilité, contrats, disponibilité, alternance, permis). **Pas de nom, pas
+d'email, pas de téléphone, pas de réponses brutes.**
+
+Puis : « Rédige un email par offre fournie. »
+
+### Ce que le client garde
+
+- `to` = contact de l'offre (fourni par la fixture), jamais inventé par l'IA ;
+- `applicationUrl` = URL de l'offre ;
+- la signature : si l'IA oublie les espaces réservés, le client ajoute
+  `[Prénom]` et `[email] · [téléphone]` (ou les coordonnées réelles si elles
+  existent déjà côté client) ;
+- aucun envoi automatique : copie ou ouverture Gmail.
 
 ---
 
-## Résumé des données personnelles envoyées
+## Validation : au-delà des ids
 
-| Appel | Données personnelles |
-|---|---|
-| Carte adaptative | Textes de cartes choisies ; **pas** d'âge/études/ville/réponses |
-| Questions étape 2 | Textes de cartes ; **pas** de réponses ni d'âge/études |
-| Dossier | Âge, niveau d'études, statut, ville, mobilité, **réponses d'entretien brutes**, textes de cartes/profil |
-| Config test | Aucune |
+`lib/dossier/narrative.ts` :
 
-Le nom, l'email et le téléphone ne sont **pas** envoyés. Le consentement
-`consents.ai` du contrat `docs/DOSSIER.md` n'est **pas** transmis ni vérifié
-par la route actuelle.
+- **Synthèse** : ids de directions / formations / preuves filtrés, textes
+  interdits rejetés, longueurs bornées.
+- **CV** : `experienceId` inconnu supprimé ; puces avec `?`, « tu/ton/ta/tes »,
+  année inventée, langage d'entretien ou terme interdit supprimées ; soft
+  skills filtrées sur le vocabulaire contrôlé ; langues et intérêts bornés.
+- **Emails** : `offerId` inconnu supprimé ; corps avec email/téléphone inventé
+  supprimé ; corps qui ne mentionne ni le titre ni l'entreprise supprimé ;
+  vouvoiement vérifié ; signature complétée côté client.
+- **Limite** : le validateur ne peut pas prouver qu'une phrase est vraie. Il
+  bloque les inventions détectables (ids, contacts, années, questions,
+  vocabulaire interdit) et laisse le jeune relire. Une validation par phrase
+  générée serait la prochaine étape.
+
+## Consentement, taille et cache
+
+- Le client envoie `facts.consents.ai` depuis le réglage « Utiliser Claude si
+  disponible » du panneau de démo.
+- `POST /api/dossier` refuse si `consents.ai` est faux (403), si les faits ne
+  passent pas le schéma Zod (400), ou si le corps dépasse 200 Ko (413).
+- Cache mémoire par hash SHA-256 des faits, 100 entrées. Les sections valides
+  sont mises en cache ; une section en échec n'est pas cachée.
+- En mode `mock`, la route renvoie `narrative:null` et le client garde le
+  dossier déterministe.
+
+## Pistes de réglage restantes
+
+1. **Faire valider la ligne de CV par le jeune** à la fin de l'entretien
+   (« Voilà ce qu'on retiendra »), pour envoyer un résumé validé plutôt que
+   seulement titre + preuve + compétence.
+2. **Ajouter les dates / durées** aux expériences quand le jeune les donne :
+   aujourd'hui le CV les met en `[À compléter]`.
+3. **Tester les prompts avec le vrai Claude** sur 3–5 profils, comparer les
+   CV générés, ajuster les exemples plutôt que d'ajouter des règles.
+4. **Mesurer les emails** : 120–180 mots, deux preuves, une disponibilité.
+   Vérifier qu'aucun email ne cite une entreprise absente des faits.
+5. **Ne pas journaliser** `.llm-debug` en production ; il contient des
+   données personnelles.

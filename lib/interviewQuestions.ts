@@ -78,9 +78,20 @@ export function buildQuestionsPrompt({ parentText, proofText, macro }: QuestionI
  * Gabarit seulement : une consigne ouverte (« Raconte étape par étape ce que
  * t'as fait ») vaut une question, elle n'a pas besoin de « ? ».
  */
+const OPEN_MARKERS =
+  /\b(comment|pourquoi|quand|où|quel|quelle|quels|quelles|qu'est-ce|quoi|raconte|décris|explique|parle)\b/iu;
+const YES_NO_START =
+  /^(est-ce que\s+)?(tu\s+|t'|tu$)?(as|es|peux|sais|veux|aimes|fais|vas|viens)\b/iu;
+const IMPERATIVE = /^(raconte|décris|explique|parle|dis)\b/iu;
+
 export function isUsableQuestion(q: string): boolean {
   const text = q.trim();
-  return text.length >= MIN_LEN && text.length <= MAX_LEN;
+  if (text.length < MIN_LEN || text.length > MAX_LEN) return false;
+  // Une question fermée (« T'as déjà réparé ? ») ne produit pas de récit.
+  if (YES_NO_START.test(text) && !OPEN_MARKERS.test(text)) return false;
+  // On accepte une consigne ouverte (« Raconte étape par étape… ») sans « ? ».
+  if (!text.includes("?") && !IMPERATIVE.test(text)) return false;
+  return true;
 }
 
 export async function writeQuestions(

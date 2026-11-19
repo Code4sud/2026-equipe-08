@@ -3,7 +3,9 @@
  *
  *   npm run prompts
  *
- * Local uniquement : le dump du dossier contient les réponses d'entretien.
+ * Local uniquement : le dump des faits contient les expériences du persona,
+ * mais pas les réponses brutes d'entretien.
+ *
  * Pour voir les réponses réelles de Claude en plus des prompts :
  *   LLM_DEBUG_PROMPTS=1 LLM_BACKEND=cli npm run dev
  *   puis lire .llm-debug/prompts.jsonl
@@ -20,8 +22,12 @@ import { DEMO_SESSION, DEMO_USER } from "../lib/dossier/demo";
 import { buildDossier, profileFromSession } from "../lib/dossier/build";
 import { buildFacts } from "../lib/dossier/narrative";
 import {
-  DOSSIER_SYSTEM_PROMPT,
-  buildDossierPrompt,
+  CV_SYSTEM_PROMPT,
+  EMAILS_SYSTEM_PROMPT,
+  SYNTHESIS_SYSTEM_PROMPT,
+  buildCvPrompt,
+  buildEmailsPrompt,
+  buildSynthesisPrompt,
 } from "../lib/dossier/prompts";
 import {
   QUESTIONS_SYSTEM_PROMPT,
@@ -74,7 +80,7 @@ function section(title: string, body: string) {
 }
 
 console.log(
-  "ATTENTION : ce dump contient les réponses d'entretien du persona de démo. Local uniquement.",
+  "ATTENTION : ce dump contient les faits du persona de démo. Local uniquement.",
 );
 
 section("1. CARTE ADAPTATIVE — SYSTEM", CARD_SYSTEM_PROMPT);
@@ -104,5 +110,26 @@ const dossier = buildDossier({
 });
 const facts = buildFacts(dossier);
 
-section("3. DOSSIER (SYNTHÈSE + CV + EMAILS) — SYSTEM", DOSSIER_SYSTEM_PROMPT);
-section("3. DOSSIER (SYNTHÈSE + CV + EMAILS) — USER", buildDossierPrompt(facts));
+section("3. SYNTHÈSE — SYSTEM", SYNTHESIS_SYSTEM_PROMPT);
+section("3. SYNTHÈSE — USER", buildSynthesisPrompt(facts));
+
+section("4. CV — SYSTEM", CV_SYSTEM_PROMPT);
+section("4. CV — USER", buildCvPrompt(facts));
+
+section("5. EMAILS — SYSTEM", EMAILS_SYSTEM_PROMPT);
+section("5. EMAILS — USER", buildEmailsPrompt(facts));
+
+section(
+  "CONTRÔLE : CE QUI PART À L'IA",
+  JSON.stringify(
+    {
+      consents: facts.consents,
+      cvTarget: facts.cvTarget,
+      user: facts.user,
+      offers: facts.offers,
+      note: "Aucun prénom, email, téléphone ni réponse brute d'entretien.",
+    },
+    null,
+    2,
+  ),
+);

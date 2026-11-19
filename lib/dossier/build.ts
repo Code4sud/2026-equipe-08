@@ -7,7 +7,7 @@ import {
   matchJobs,
   profileHeadline,
 } from "../match";
-import { jobLevel, shortCenter, studiesLabel } from "../presentation";
+import { jobLevel, shortCenter } from "../presentation";
 import {
   computeProfile,
   resolveConfirmation,
@@ -17,15 +17,15 @@ import {
 import { TRAITS, RIASEC } from "../types";
 import type { Job, JobMatch, Profile } from "../types";
 import { TRAIT_META, traitSummary } from "../traits";
+import { chooseCvTarget, deLabel, makeCv as makeCvTemplate } from "./cv";
 import { OFFERS, TRAININGS } from "./demo";
-import { extractExperience } from "./experience";
+import { enrichExperience, extractExperience } from "./experience";
 import { applyNarrative } from "./narrative";
 import type {
   BuildInput,
   DemoUser,
   Dossier,
   DossierActionStep,
-  DossierCv,
   DossierDirection,
   DossierEmail,
   DossierJob,
@@ -93,11 +93,15 @@ function makeEmail(
   job: DossierJob,
   offer: DossierOffer,
 ): DossierEmail {
-  const name = user.firstName || "[Ton prénom]";
+  const name = user.firstName || "[Prénom]";
   const proof =
     job.evidence.length > 0
       ? `Lors de mon parcours, j'ai notamment : ${job.evidence.slice(0, 3).join(" ; ")}.`
       : "Mon profil correspond à ce que vous recherchez.";
+  const skills = job.competences.savoirFaire
+    .slice(0, 2)
+    .map((competence) => competence.label.toLowerCase())
+    .join(" et ");
   const contact = [user.email, user.phone].filter(Boolean).join(" · ");
 
   return {
@@ -107,9 +111,9 @@ function makeEmail(
     subject: `Candidature — ${offer.title} (${offer.company})`,
     body: `Bonjour,
 
-Je vous adresse ma candidature pour le poste de ${offer.title} à ${offer.city}.
+Je vous adresse ma candidature pour le poste ${deLabel(offer.title)} à ${offer.city}.
 
-${proof}
+${proof}${skills ? ` Je peux mettre à profit ${skills}.` : ""}
 
 Je suis disponible ${user.availableFrom} et mobile jusqu'à ${user.mobilityKm} km autour de ${user.city}.
 ${user.alternance ? "Je suis aussi ouvert·e à une alternance pour monter en compétences." : ""}
@@ -117,8 +121,10 @@ ${user.alternance ? "Je suis aussi ouvert·e à une alternance pour monter en co
 Je serais ravi·e d'échanger avec vous.
 
 ${name} ${user.lastName ?? ""}
-${contact || "[ton email] · [ton téléphone]"}`,
+${contact || "[email] · [téléphone]"}`,
     applicationUrl: offer.url,
+    company: offer.company,
+    jobLabel: offer.title,
   };
 }
 
@@ -194,91 +200,7 @@ function makeSynthesis(profile: Profile, user: DemoUser) {
   };
 }
 
-function makeCv(
-  synthesis: ReturnType<typeof makeSynthesis>,
-  profile: Profile,
-  user: DemoUser,
-  experience: Dossier["experience"],
-  trainings: DossierTraining[],
-): DossierCv {
-  const topTraining = trainings[0];
-  const confirmed = profile.confirmed.map(shortCenter);
-  const name = `${user.firstName} ${user.lastName ?? ""}`.trim();
-  const experienceText = experience
-    .slice(0, 3)
-    .map((item) => item.title)
-    .join(", ");
-  const experienceCompetences = experience.flatMap(
-    (item) => item.competences ?? [],
-  );
-  const competences = [...new Set([...confirmed, ...experienceCompetences])];
-  const top = confirmed.join(", ") || synthesis.headline;
 
-  return {
-    title: `${synthesis.headline || "Mon profil"} — ${user.alternance ? "alternance" : "emploi"}`,
-    summary: `Profil ${top.toLowerCase()}${
-      experienceText ? `, avec des expériences en ${experienceText}` : ""
-    }. Je recherche ${user.contractTypes.join(", ")} à ${user.city}${
-      user.alternance ? " ou une alternance" : ""
-    }, avec une mobilité de ${user.mobilityKm} km.`,
-    contact: {
-      name: name || "[Ton nom]",
-      city: user.city,
-      email: user.email,
-      phone: user.phone,
-    },
-    sections: [
-      {
-        heading: "Expériences & compétences",
-        items: experience.map((item) => ({
-          title: item.title,
-          detail:
-            item.competences?.length && item.competences.length > 0
-              ? item.competences.join(" · ")
-              : item.detail,
-        })),
-      },
-      {
-        heading: "Compétences validées",
-        items: competences.map((label) => ({
-          title: label,
-          detail: confirmed.includes(label)
-            ? "Domaine confirmé par toi"
-            : "Compétence issue d'un récit",
-        })),
-      },
-      {
-        heading: "Formation",
-        items: [
-          {
-            title: `Niveau actuel : ${studiesLabel(user.studiesLevel)}`,
-          },
-          ...(topTraining
-            ? [
-                {
-                  title: topTraining.title,
-                  detail: `${topTraining.durationMonths} mois · ${
-                    topTraining.alternance ? "alternance" : "voie scolaire"
-                  } · ${topTraining.establishments.map((e) => e.name).join(", ")}`,
-                },
-              ]
-            : []),
-        ],
-      },
-      {
-        heading: "Disponibilité",
-        items: [
-          {
-            title: `Disponible ${user.availableFrom}`,
-            detail: `Mobile ${user.mobilityKm} km autour de ${user.city} · Permis ${
-              user.driverLicense ? "oui" : "non"
-            }`,
-          },
-        ],
-      },
-    ],
-  };
-}
 
 function makeActionPlan(
   directions: DossierDirection[],
@@ -337,10 +259,11 @@ export function buildDossier(input: BuildInput): Dossier {
   const allCards = [...CARDS, ...session.generated];
   // Si l'étape 2 a produit des récits, ils remplacent la simple trace des
   // swipes : sinon le CV et le prompt IA contiennent 15 entrées dupliquées.
+  const extracted = extractExperience(session);
   const experience =
     user.experience.length > 0
-      ? user.experience
-      : extractExperience(session);
+      ? enrichExperience(user.experience, extracted)
+      : extracted;
   const matches = matchJobs(profile, JOBS, allCards, JOBS.length);
   const directions = makeDirections(matches, profile);
   const trainings = uniqueBy(
@@ -356,7 +279,14 @@ export function buildDossier(input: BuildInput): Dossier {
     (e) => e.offerId,
   );
   const synthesis = makeSynthesis(profile, user);
-  const cv = makeCv(synthesis, profile, user, experience, trainings);
+  const target = chooseCvTarget(directions, user.city, input.targetOfferId);
+  const cv = makeCvTemplate({
+    profile,
+    user,
+    experience,
+    trainings,
+    target: target.target,
+  });
   const actionPlan = makeActionPlan(directions, emails, trainings, user);
   const domains = Object.fromEntries(
     CENTER_IDS.map((id) => {

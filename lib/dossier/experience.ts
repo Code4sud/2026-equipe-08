@@ -35,6 +35,7 @@ export function extractExperience(session: DossierSession): DemoExperience[] {
         id: key,
         title: macro,
         detail: "Vécu confirmé",
+        proof: card.text,
         source: "creuser",
         evidence: [parent?.text, card.text].filter(
           (text): text is string => Boolean(text),
@@ -74,6 +75,7 @@ export function extractExperience(session: DossierSession): DemoExperience[] {
       id: key,
       title: interview.parentText,
       detail: answers.join(" "),
+      proof: interview.proofText,
       source: "creuser",
       evidence: [interview.proofText, ...answers],
       competences: [interview.skill],
@@ -96,4 +98,32 @@ export function mergeExperience(
     out.push(item);
   }
   return out;
+}
+
+/**
+ * Les expériences du contrat dossier n'ont pas toujours la preuve ni les
+ * compétences ROME. On les complète depuis la session, sans écraser ce que
+ * le jeune a déjà fourni.
+ */
+export function enrichExperience(
+  items: DemoExperience[],
+  source: DemoExperience[],
+): DemoExperience[] {
+  const byTitle = new Map(
+    source.map((item) => [item.title.trim().toLowerCase(), item]),
+  );
+  return items.map((item) => {
+    const match = byTitle.get(item.title.trim().toLowerCase());
+    if (!match) return item;
+    return {
+      ...item,
+      detail: item.detail ?? match.detail,
+      proof: item.proof ?? match.proof,
+      competences:
+        item.competences && item.competences.length > 0
+          ? item.competences
+          : match.competences,
+      evidence: item.evidence.length > 0 ? item.evidence : match.evidence,
+    };
+  });
 }

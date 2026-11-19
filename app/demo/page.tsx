@@ -447,7 +447,7 @@ export default function DemoPage() {
               checked={user.aiEnabled}
               onChange={(event) => update("aiEnabled", event.target.checked)}
             />
-            Utiliser Claude si disponible
+            Utiliser Claude pour le dossier, le CV et les emails
           </label>
         </div>
       </section>

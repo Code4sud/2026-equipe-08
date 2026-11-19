@@ -177,6 +177,8 @@ export type DossierUser = {
     organization?: string;
     durationMonths?: number;
     description?: string;
+    /** Question de vécu (pas la réponse libre) : utilisable par l'IA. */
+    proof?: string;
     competences?: string[];
   }>;
   constraints?: { mobilityKm?: number; driverLicense?: boolean };
@@ -213,6 +215,7 @@ export function toDossierUser(cv: CvAnswers, interviews: Interview[]): DossierUs
         .map((q, k) => (i.answers[k]?.trim() ? `${q} — ${i.answers[k].trim()}` : ""))
         .filter(Boolean)
         .join("\n"),
+      proof: i.proofText,
       competences: [i.skill],
     }));
   if (cv.experience?.trim()) {

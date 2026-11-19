@@ -33,6 +33,8 @@ Routes :
 | `/creuser` | étape 2 : questions ouvertes sur une expérience prouvée + infos CV, dictée vocale locale |
 | `/style` | 15 paires de style de travail |
 | `/result` | restitution, 3 directions, export |
+| `/dossier` | dossier complet : plan d'action, CV ciblé, emails, sources |
+| `/demo` | panneau de démonstration : persona, localisation, IA |
 
 > Ce projet utilise **Next.js 16.4**. Les APIs ont changé : lire `node_modules/next/dist/docs/` avant d'écrire du code (voir `AGENTS.md`).
 
@@ -44,6 +46,7 @@ npm run build        # build production
 npm test             # tests Vitest (scoring, convergence, matching, swipe adaptatif)
 npm run import:rome  # régénère data/rome/*.json depuis le dump ROME
 npm run build:skills # régénère data/rome/skills.json (macro-compétences ROME)
+npm run prompts      # affiche les prompts IA sans appeler Claude
 npm run lint
 ```
 
@@ -55,6 +58,9 @@ Une seule couche, `lib/llm`, réglée par `.env.local` :
 LLM_BACKEND=mock   # défaut : aucun appel, chaque feature a un repli
 LLM_BACKEND=cli    # `claude -p` avec l'abonnement Claude de la machine (local uniquement)
 ```
+
+Le dossier utilise trois appels séparés (synthèse, CV ciblé, emails). Audit
+complet, payloads et garde-fous : [`docs/PROMPTS.md`](docs/PROMPTS.md).
 
 ---
 

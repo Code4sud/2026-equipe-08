@@ -55,6 +55,8 @@ describe("étape 2 — questions du projet", () => {
   it("accepte questions et consignes ouvertes, rejette ce qui sort du gabarit", () => {
     expect(isUsableQuestion("Comment tu as trouvé la panne ?")).toBe(true);
     expect(isUsableQuestion("Raconte étape par étape ce que t'as fait.")).toBe(true);
+    expect(isUsableQuestion("T'as déjà réparé un vélo ?")).toBe(false);
+    expect(isUsableQuestion("Est-ce que tu as aimé ?")).toBe(false);
     expect(isUsableQuestion("Quand ?")).toBe(false);
     expect(isUsableQuestion("x".repeat(200))).toBe(false);
   });

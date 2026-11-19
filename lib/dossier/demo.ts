@@ -77,8 +77,9 @@ export function demoUserFromDossier(
     id: `cv-${index + 1}`,
     title: item.title,
     detail: item.description,
+    proof: item.proof,
     source: "creuser" as const,
-    evidence: [item.description ?? item.title].filter(
+    evidence: [item.proof, item.description ?? item.title].filter(
       (text): text is string => Boolean(text),
     ),
     competences: item.competences,

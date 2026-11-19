@@ -57,7 +57,8 @@ export type SwipeResult = {
       title: string;
       organization?: string;
       durationMonths?: number;
-      description?: string;
+      description?: string;             // reste local, jamais envoyé brut à l'IA
+      proof?: string;                   // question de vécu (oui/non), utilisable par l'IA
       competences?: string[];           // libellés ou codes ROME validés
     }>;
     constraints?: {
@@ -227,13 +228,40 @@ export type TrainingDossier = TrainingPath & {
 };
 
 export type CvDossier = {
-  title: string;                        // "Technicien installation réseau"
-  summary: string;                      // 2–3 phrases, IA
-  sections: Array<{
-    heading: string;                    // "Expériences", "Compétences"...
-    items: Array<{ title: string; detail?: string; dates?: string }>;
+  target: {
+    offerId?: string;
+    jobCode?: string;
+    jobLabel: string;                   // intitulé de l'offre
+    romeLabel?: string;                 // libellé ROME, pour la formation
+    company?: string;
+    city?: string;
+    contract?: string;
+    salary?: string;
+    competences: string[];              // compétences ROME du métier
+    savoirEtre?: string[];              // attentes de l'entreprise, pour cibler les soft skills
+  };
+  header: {
+    name: string;
+    title: string;                      // intitulé du poste ciblé
+    city: string;
+    email?: string;
+    phone?: string;
+    availability: string;
+    mobility: string;
+  };
+  summary: string;                      // 2–3 phrases, IA ou repli
+  experiences: Array<{
+    id: string;
+    title: string;                      // "Réparation d'un vélo crevé"
+    organization?: string;
+    bullets: string[];                  // 1–3 puces, jamais la question brute
+    softSkills: string[];
   }>;
-  export: { json: boolean; pdf: boolean };
+  skills: { technical: string[]; soft: string[] };
+  education: Array<{ title: string; detail?: string; dates?: string }>;
+  languages: string[];
+  interests: string[];
+  placeholders: string[];               // champs à compléter avant envoi
 };
 
 export type EmailDraft = {
@@ -289,6 +317,7 @@ Un **fait** pseudonymisé, pas le JSON brut :
 
 ```ts
 type DossierFacts = {
+  consents: { ai: boolean };
   profile: {
     code: string;
     domains: Array<{ id: string; label: string; score: number; confirmed: boolean }>;
@@ -299,16 +328,62 @@ type DossierFacts = {
   directions: Array<{
     id: string;
     title: string;
-    jobs: Array<{ code: string; label: string; level: string; competences: string[] }>;
+    jobs: Array<{
+      code: string;
+      label: string;
+      level: string;
+      competences: string[];
+      savoirEtre: string[];
+      friction: string[];
+    }>;
     evidence: Array<{ id: string; text: string }>;
+    watchout?: string;
   }>;
-  trainings: Array<{ id: string; title: string; level: string; duration: string; establishments: string[] }>;
-  offers: Array<{ id: string; title: string; company: string; city: string }>;
+  trainings: Array<{
+    id: string;
+    title: string;
+    level: string;
+    duration: string;
+    establishments: string[];
+    jobs: string[];
+    debouches: string[];
+    prerequisites: string[];
+    alternance: boolean;
+    cost?: string;
+    why: string;
+  }>;
+  offers: Array<{
+    id: string;
+    title: string;
+    company: string;
+    city: string;
+    jobCode?: string;
+    jobLabel?: string;
+    contract?: string;
+    salary?: string;
+    contact?: string;
+    url?: string;
+    competences?: string[];
+  }>;
+  cvTarget: CvDossier["target"];
+  softSkills: string[];
   user: {
-    age?: number;
+    age: number;
     studiesLevel: string;
-    experience: Array<{ title: string; duration: string }>;
-    mobilityKm?: number;
+    status: string;
+    experience: Array<{
+      id: string;
+      title: string;
+      proof?: string;                   // question de vécu, pas la réponse
+      competences?: string[];
+      source: string;
+    }>;
+    mobilityKm: number;
+    city: string;
+    contracts: string[];
+    availability: string;
+    alternance: boolean;
+    driverLicense: boolean;
   };
 };
 ```
@@ -320,14 +395,30 @@ type DossierFacts = {
 
 ```ts
 type Narrative = {
-  headline: string;
-  summary: string;
-  strengths: Array<{ label: string; evidenceIds: string[] }>;
-  directions: Array<{ id: string; why: string; watchout: string }>;
-  trainings: Array<{ id: string; why: string }>;
-  cv: { title: string; summary: string; bullets: string[] };
-  emails: Array<{ offerId: string; subject: string; body: string }>;
-  nextSteps: Array<{ title: string; detail: string; evidenceIds: string[] }>;
+  synthesis: {
+    headline: string;
+    summary: string;
+    strengths: Array<{ label: string; evidenceIds: string[] }>;
+    directions: Array<{ id: string; why: string; watchout: string }>;
+    trainings: Array<{ id: string; why: string }>;
+    nextSteps: Array<{ title: string; detail: string; evidenceIds: string[] }>;
+  };
+  cv: {
+    targetOfferId?: string;             // doit correspondre à cvTarget.offerId
+    title: string;
+    summary: string;
+    experiences: Array<{
+      experienceId: string;
+      bullets: string[];
+      softSkills: string[];
+    }>;
+    softSkills: string[];
+    languages: string[];
+    interests: string[];
+  };
+  emails: {
+    emails: Array<{ offerId: string; subject: string; body: string }>;
+  };
 };
 ```
 
@@ -339,8 +430,9 @@ type Narrative = {
 4. **Pas de promesse** : pas de « tu vas être embauché », pas de probabilité de réussite.
 5. **Ton** : direct, respectueux, jamais infantilisant. Le jeune est « tu ».
 6. **Langue** : français, phrases courtes, jargon ROME traduit.
-7. **Coût / latence** : un seul appel par dossier, cache par `inputHash`, timeout 25 s, repli déterministe. Sur Vercel Hobby, prévoir `maxDuration = 60` et un fallback.
-8. **Consentement** : `consents.ai` doit être vrai ; sinon, mode déterministe.
+7. **Coût / latence** : trois appels par dossier (synthèse, CV, emails), lancés en parallèle, cache par hash des faits, timeout 45 s par section, `maxDuration = 60`, repli déterministe indépendant par section.
+8. **Consentement** : `consents.ai` doit être vrai ; sinon, la route refuse et le client garde le mode déterministe.
+9. **Minimisation** : le prénom, l'email, le téléphone et les réponses brutes d'entretien ne sont jamais envoyés. Le CV reçoit le titre de l'expérience, la question de vécu et les compétences ROME validées.
 
 ---
 
@@ -414,20 +506,25 @@ type Narrative = {
 
 ## 7. CV
 
-- **Template** rempli avec : prénom (optionnel), ville, titre, résumé (IA ou déterministe), expériences, compétences validées, formations, langues/centres d'intérêt (optionnels), disponibilité.
+- **Template ciblé sur UNE offre** : l'interface permet de choisir l'offre, le CV se régénère pour cette entreprise.
+- **Sections** : en-tête (nom, intitulé du poste, ville, contact, disponibilité, mobilité), profil, expériences, compétences techniques, soft skills, formation, langues, centres d'intérêt, champs à compléter.
+- **Traduction des expériences** : `Réparer un vélo crevé` devient `Réparation d'un vélo crevé`, avec des puces orientées vers les compétences du poste. L'IA ne recopie jamais la question d'entretien ni la réponse brute.
+- **Soft skills contrôlées** : vocabulaire fermé (`Autonomie`, `Rigueur`, `Organisation`, `Travail en équipe`, `Sens du diagnostic`, etc.), adossées aux traits, aux compétences ROME et aux savoir-être de l'offre ciblée. Pas de diagnostic de personnalité.
+- **Champs manquants** : email, téléphone, dates, langues, centres d'intérêt apparaissent en `[À compléter]` avec une checklist. Le jeune relit et complète.
 - **Pas de photo par défaut**, pas d'âge, pas de situation familiale, pas d'origine.
-- Le jeune peut éditer chaque champ avant export.
-- Export : **PDF via impression** (fiable, sans dépendance) + **JSON**. DOCX en P2.
+- Export : **PDF via impression dédiée** (le bouton « Exporter le CV » n'imprime que la feuille A4) + **JSON**. DOCX en P2.
 - Le CV est un **brouillon** : mention « à relire avant envoi ».
 
 ---
 
 ## 8. Emails
 
-- Pour chaque offre shortlistée : objet + corps personnalisé (2–3 phrases sur l'adéquation, 1 phrase sur la disponibilité, formule de politesse).
-- **Pas d'envoi automatique.** `mailto:` + bouton « copier ».
-- **Pas d'adresse inventée.** Si la source ne fournit pas d'email, on affiche le lien de candidature ou un message à copier dans le formulaire de l'entreprise.
-- L'IA peut rédiger, mais chaque email référence l'`offerId` et les compétences validées ; le validateur rejette les entreprises inconnues.
+- Pour chaque offre shortlistée : objet + corps personnalisé de **120–180 mots**, avec deux phrases de preuve reliées aux compétences de l'offre, la disponibilité, la mobilité et une formule de politesse.
+- L'IA reçoit le titre, l'entreprise, la ville, le code ROME, le contrat, le salaire, le contact, l'URL et les compétences de l'offre. Elle ne reçoit ni le nom, ni l'email, ni le téléphone du jeune.
+- **Pas d'envoi automatique.** `mailto:` + bouton « copier » + ouverture Gmail.
+- **Pas d'adresse inventée.** Le `to` vient de la fixture ; si la source ne fournit pas d'email, on affiche le lien de candidature.
+- La signature de l'IA doit utiliser `[Prénom]`, `[email]`, `[téléphone]`. Si elle les oublie, le client ajoute la signature déterministe.
+- Le validateur rejette un email qui contient un email/téléphone inventé, qui ne mentionne ni le titre ni l'entreprise, ou qui tutoie l'entreprise.
 
 ---
 
@@ -450,9 +547,9 @@ Métier → niveau requis → chemin le plus court → établissements proches �
 
 ## 10. Graphiques
 
-- Radar Holland (existant) + barres de confiance par domaine.
-- Barres de match (intérêt / contexte) pour chaque métier.
-- Timeline de formation (durée, alternance).
+- **Hexagone Holland** lisible : six branches nommées, valeurs relatives, trois dominantes mises en avant, pas de labels coupés.
+- **Barres d'affinité** par domaine et par métier, avec pourcentage d'affinité et niveau de confiance.
+- Timeline de formation (durée, alternance) à venir.
 - Demande locale (nombre d'offres) et tension si disponible, avec source et date.
 - **Pas de pourcentage de réussite.** Les barres sont des affinités, pas des probabilités.
 
@@ -476,7 +573,7 @@ Le PDF doit tenir en deux documents :
 ## 12. Éthique et données personnelles
 
 1. **Consentements séparés** : générer le dossier, envoyer les faits à l'IA, exporter.
-2. **Minimisation** : pas de nom/adresse dans l'IA ; code postal → ville ; récit brut jamais envoyé.
+2. **Minimisation** : pas de nom, email, téléphone ni adresse complète dans l'IA ; code postal → ville ; récit brut d'entretien jamais envoyé. Le CV reçoit seulement le titre de l'expérience, la question de vécu et les compétences ROME validées.
 3. **Pas d'inférence protégée** : santé, handicap, origine, famille, religion, orientation sexuelle, opinions politiques, situation administrative.
 4. **Âge / études / expérience** = éligibilité factuelle, jamais un signal de personnalité.
 5. **Le jeune valide** : chaque compétence du CV et chaque email est éditable.

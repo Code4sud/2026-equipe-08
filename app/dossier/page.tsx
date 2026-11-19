@@ -1,18 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { RIASEC } from "../../lib/types";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Riasec } from "../../lib/types";
 import {
   RIASEC_COLOR,
-  RIASEC_LABEL,
   matchLevel,
   statusLabel,
   studiesLabel,
 } from "../../lib/presentation";
 import { useSession } from "../../lib/store";
 import { useMounted } from "../../lib/useMounted";
+import { AffinityBars, HollandChart } from "../../components/Charts";
 import {
   buildDossier,
   profileFromSession,
@@ -34,7 +33,7 @@ import type {
   DossierOffer,
   DossierSession,
   DossierTraining,
-  Narrative,
+  NarrativeSections,
 } from "../../lib/dossier/types";
 
 type Backend = "mock" | "cli" | "api";
@@ -77,12 +76,15 @@ export default function DossierPage() {
         : demoUserFromDossier(sessionUser, demoUser),
     [isDemoSession, demoUser, sessionUser],
   );
+  const [targetOfferId, setTargetOfferId] = useState<string | undefined>(
+    undefined,
+  );
   const base = useMemo(
-    () => buildDossier({ session, profile, user }),
-    [session, profile, user],
+    () => buildDossier({ session, profile, user, targetOfferId }),
+    [session, profile, user, targetOfferId],
   );
 
-  const [narrative, setNarrative] = useState<Narrative | null>(null);
+  const [narrative, setNarrative] = useState<NarrativeSections | null>(null);
   const dossier = useMemo(
     () => (narrative ? applyNarrative(base, narrative) : base),
     [base, narrative],
@@ -94,6 +96,15 @@ export default function DossierPage() {
   const [aiState, setAiState] = useState<AiState>("idle");
   const [aiError, setAiError] = useState<string | null>(null);
   const [selectedEmail, setSelectedEmail] = useState<DossierEmail | null>(null);
+
+  useEffect(() => {
+    // Lien de secours pour imprimer uniquement le CV (ex. PDF headless).
+    if (new URLSearchParams(window.location.search).get("print") === "cv") {
+      document.body.classList.add("print-cv");
+      return () => document.body.classList.remove("print-cv");
+    }
+    return undefined;
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -128,7 +139,7 @@ export default function DossierPage() {
         body: JSON.stringify({ facts }),
       });
       const data = (await response.json()) as {
-        narrative?: Narrative | null;
+        narrative?: NarrativeSections | null;
         error?: string;
       };
       if (data.narrative) {
@@ -142,6 +153,17 @@ export default function DossierPage() {
       setAiError(error instanceof Error ? error.message : "Erreur inconnue");
       setAiState("error");
     }
+  }
+
+  function printCv() {
+    document.body.classList.add("print-cv");
+    const cleanup = () => {
+      document.body.classList.remove("print-cv");
+      window.removeEventListener("afterprint", cleanup);
+    };
+    window.addEventListener("afterprint", cleanup);
+    window.print();
+    window.setTimeout(cleanup, 1500);
   }
 
   function downloadJson() {
@@ -180,7 +202,7 @@ export default function DossierPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-5 pb-24 pt-6">
+    <main className="dossier-main mx-auto w-full max-w-4xl px-5 pb-24 pt-6">
       <header className="no-print flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Link
@@ -225,7 +247,7 @@ export default function DossierPage() {
       )}
 
       <section className="hard-shadow mt-5 overflow-hidden rounded-[32px] border-2 border-ink bg-ink text-paper">
-        <div className="grid gap-6 p-6 sm:grid-cols-[1fr_230px] sm:items-center">
+        <div className="grid gap-6 p-6 sm:grid-cols-[1fr_320px] sm:items-center">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.22em] text-paper/45">
               Dossier de restitution
@@ -264,10 +286,10 @@ export default function DossierPage() {
             </div>
           </div>
           <div className="-mx-2 sm:mx-0">
-            <Radar theta={dossier.charts.radar} />
-            <p className="mt-1 text-center text-[9px] font-bold uppercase tracking-widest text-paper/30">
-              profil relatif
-            </p>
+            <HollandChart
+              theta={dossier.charts.radar}
+              code={dossier.profile.code}
+            />
           </div>
         </div>
       </section>
@@ -452,15 +474,52 @@ export default function DossierPage() {
       <section className="mt-12" id="cv">
         <SectionTitle
           kicker="05"
-          title="Ton CV, prêt à relire"
-          subtitle="Un brouillon rempli avec tes données. Relis, modifie, puis imprime ou copie dans ton CV."
+          title="Ton CV, ciblé sur une offre"
+          subtitle="Une vraie trame de CV : les expériences sont traduites en compétences professionnelles pour l'entreprise visée. Relis, complète les champs manquants, puis imprime en PDF."
         />
+        <div className="no-print mt-4 flex flex-col gap-3 rounded-2xl border border-ink/15 bg-paper p-4 sm:flex-row sm:items-end sm:justify-between">
+          <label className="block min-w-0 flex-1">
+            <span className="text-[10px] font-black uppercase tracking-widest text-ink/40">
+              Offre ciblée par le CV
+            </span>
+            <select
+              value={dossier.cv.target.offerId ?? ""}
+              onChange={(event) =>
+                setTargetOfferId(event.target.value || undefined)
+              }
+              className="input mt-1.5"
+            >
+              {cvOffers(dossier).map(({ job, offer }) => (
+                <option key={offer.id} value={offer.id}>
+                  {offer.company} — {offer.title}
+                  {job.label !== offer.title ? ` (${job.label})` : ""}
+                </option>
+              ))}
+              {cvOffers(dossier).length === 0 && (
+                <option value="">Candidature spontanée</option>
+              )}
+            </select>
+          </label>
+          <button
+            onClick={printCv}
+            className="shrink-0 rounded-full bg-ink px-4 py-2.5 text-xs font-bold text-paper"
+          >
+Exporter le CV (PDF)
+          </button>
+        </div>
+        {narrative?.cv &&
+          narrative.cv.targetOfferId !== dossier.cv.target.offerId && (
+            <p className="no-print mt-3 rounded-xl bg-accent/10 px-3 py-2 text-[11px] leading-relaxed text-ink/60">
+              Tu as changé d&apos;offre : ce CV est la trame déterministe.
+              Relance Claude pour le rédiger pour cette entreprise.
+            </p>
+          )}
         <CvSheet dossier={dossier} />
         <button
           onClick={() => window.print()}
           className="no-print mt-3 rounded-full border border-ink/20 px-4 py-2 text-xs font-bold text-ink/60"
         >
-          Imprimer le dossier + CV
+          Imprimer le dossier complet
         </button>
       </section>
 
@@ -510,16 +569,18 @@ export default function DossierPage() {
           subtitle="Des barres d'affinité de profil, pas des probabilités de réussite."
         />
         <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <ChartBars
+          <AffinityBars
             title="Domaines"
+            caption="Affinité de profil, pas une probabilité de réussite."
             rows={dossier.charts.domains.map((d) => ({
               label: d.label,
               value: d.score,
               detail: `${Math.round(d.confidence * 100)} % de confiance`,
             }))}
           />
-          <ChartBars
+          <AffinityBars
             title="Métiers"
+            caption="Pistes classées par affinité avec tes réponses."
             rows={dossier.charts.matchBars.map((m) => ({
               label: m.label,
               value: m.value,
@@ -668,7 +729,7 @@ function AiBanner({
       </div>
       {state === "loading" && (
         <p className="mt-2 text-xs text-ink/45">
-          Claude rédige la synthèse, les conseils et les emails. Le dossier
+          Claude rédige la synthèse, le CV ciblé et les emails. Le dossier
           déterministe reste affiché en attendant.
         </p>
       )}
@@ -899,46 +960,229 @@ function TrainingCard({
   );
 }
 
+function cvOffers(dossier: Dossier) {
+  const seen = new Set<string>();
+  const out: { job: DossierJob; offer: DossierOffer }[] = [];
+  for (const direction of dossier.directions) {
+    for (const job of direction.jobs) {
+      for (const offer of job.offers) {
+        if (seen.has(offer.id)) continue;
+        seen.add(offer.id);
+        out.push({ job, offer });
+      }
+    }
+  }
+  return out;
+}
+
 function CvSheet({ dossier }: { dossier: Dossier }) {
   const cv = dossier.cv;
+  const contact = [cv.header.email, cv.header.phone].filter(Boolean);
   return (
-    <div className="mt-4 rounded-2xl border-2 border-ink bg-white p-6 text-ink shadow-sm print:border-0 print:shadow-none">
-      <div className="border-b-2 border-ink pb-4">
-        <h3 className="text-2xl font-black tracking-tight">{cv.title}</h3>
-        <p className="mt-1 text-sm font-semibold text-ink/60">
-          {cv.contact.name} · {cv.contact.city}
-        </p>
-        <p className="mt-1 text-xs text-ink/45">
-          {[cv.contact.email, cv.contact.phone].filter(Boolean).join(" · ")}
-        </p>
-      </div>
-      <p className="mt-4 text-sm leading-relaxed text-ink/70">{cv.summary}</p>
-      <div className="mt-5 space-y-5">
-        {cv.sections.map((section) => (
-          <div key={section.heading} className="break-inside-avoid">
-            <h4 className="text-[10px] font-black uppercase tracking-[0.18em] text-accent">
-              {section.heading}
-            </h4>
-            <ul className="mt-2 space-y-2">
-              {section.items.map((item, index) => (
-                <li key={`${section.heading}-${index}`} className="text-sm">
-                  <p className="font-bold">{item.title}</p>
-                  {item.detail && (
-                    <p className="text-xs leading-relaxed text-ink/55">
-                      {item.detail}
+    <>
+      <article className="cv-sheet mt-4 overflow-hidden rounded-2xl border-2 border-ink bg-white text-ink shadow-sm print:border-0 print:shadow-none">
+        <header className="border-b-2 border-ink px-6 py-5 sm:px-8">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-[9px] font-black uppercase tracking-[0.24em] text-accent">
+                CV ciblé
+              </p>
+              <h3 className="mt-1 text-3xl font-black leading-none tracking-tight">
+                {cv.header.name}
+              </h3>
+              <p className="mt-1 text-base font-bold text-ink/65">
+                {cv.header.title}
+              </p>
+            </div>
+            <div className="text-left text-[11px] leading-relaxed text-ink/55 sm:text-right">
+              <p className="font-bold text-ink/70">{cv.header.city}</p>
+              <p>{cv.header.availability}</p>
+              <p>{cv.header.mobility}</p>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-ink/60">
+            {contact.length > 0 ? (
+              contact.map((line) => <span key={line}>{line}</span>)
+            ) : (
+              <span className="text-ink/35">
+                [Email à compléter] · [Téléphone à compléter]
+              </span>
+            )}
+          </div>
+          <div className="mt-3 inline-flex flex-wrap items-center gap-2 rounded-full bg-sand px-3 py-1.5 text-[10px] font-bold text-ink/65">
+            <span className="uppercase tracking-wider text-ink/40">Ciblé pour</span>
+            <span>
+              {cv.target.company ?? "candidature spontanée"}
+              {cv.target.jobLabel ? ` · ${cv.target.jobLabel}` : ""}
+            </span>
+            {cv.target.contract && (
+              <span className="text-ink/40">· {cv.target.contract}</span>
+            )}
+          </div>
+        </header>
+
+        <div className="px-6 py-5 sm:px-8">
+          <CvSection title="Profil">
+            <p className="text-sm leading-relaxed text-ink/75">{cv.summary}</p>
+          </CvSection>
+
+          <div className="mt-6 grid gap-7 md:grid-cols-[1.5fr_1fr]">
+            <div>
+              <CvSection title="Expériences">
+                <div className="space-y-4">
+                  {cv.experiences.map((experience) => (
+                    <div key={experience.id} className="break-inside-avoid">
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <p className="text-sm font-black">{experience.title}</p>
+                        {experience.organization && (
+                          <span className="text-[10px] font-semibold uppercase tracking-wider text-ink/35">
+                            {experience.organization}
+                          </span>
+                        )}
+                      </div>
+                      <ul className="mt-1.5 space-y-1">
+                        {experience.bullets.map((bullet, index) => (
+                          <li
+                            key={`${experience.id}-${index}`}
+                            className="flex items-start gap-2 text-xs leading-relaxed text-ink/65"
+                          >
+                            <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-accent" />
+                            <span>{bullet}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      {experience.softSkills.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {experience.softSkills.map((skill) => (
+                            <span
+                              key={`${experience.id}-${skill}`}
+                              className="rounded-full bg-mint/60 px-2 py-0.5 text-[9px] font-bold text-ink/65"
+                            >
+                              {skill}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {cv.experiences.length === 0 && (
+                    <p className="text-xs text-ink/45">
+                      [Ajoute ici une expérience, même courte : petit job, stage,
+                      bénévolat, projet personnel.]
                     </p>
                   )}
-                </li>
-              ))}
-            </ul>
+                </div>
+              </CvSection>
+            </div>
+
+            <aside className="space-y-5">
+              <CvSection title="Compétences">
+                {cv.skills.technical.length > 0 && (
+                  <ul className="space-y-1">
+                    {cv.skills.technical.map((skill) => (
+                      <li
+                        key={skill}
+                        className="flex items-start gap-2 text-[11px] leading-relaxed text-ink/65"
+                      >
+                        <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-ink/40" />
+                        <span>{skill}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {cv.skills.soft.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1">
+                    {cv.skills.soft.map((skill) => (
+                      <span
+                        key={skill}
+                        className="rounded-full border border-ink/15 px-2 py-0.5 text-[9px] font-bold text-ink/60"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {cv.skills.technical.length === 0 && cv.skills.soft.length === 0 && (
+                  <p className="text-xs text-ink/40">[À compléter]</p>
+                )}
+              </CvSection>
+
+              <CvSection title="Formation">
+                <div className="space-y-2">
+                  {cv.education.map((item) => (
+                    <div key={item.title}>
+                      <p className="text-[11px] font-bold leading-tight">
+                        {item.title}
+                      </p>
+                      {item.detail && (
+                        <p className="mt-0.5 text-[10px] leading-relaxed text-ink/50">
+                          {item.detail}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CvSection>
+
+              <CvSection title="Langues">
+                {cv.languages.length > 0 ? (
+                  <ul className="space-y-1 text-[11px] text-ink/65">
+                    {cv.languages.map((language) => (
+                      <li key={language}>{language}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-[11px] text-ink/35">[À compléter]</p>
+                )}
+              </CvSection>
+
+              <CvSection title="Centres d'intérêt">
+                {cv.interests.length > 0 ? (
+                  <p className="text-[11px] leading-relaxed text-ink/65">
+                    {cv.interests.join(" · ")}
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-ink/35">[À compléter]</p>
+                )}
+              </CvSection>
+            </aside>
           </div>
-        ))}
+        </div>
+
+        <footer className="border-t border-ink/10 px-6 py-3 text-[9px] leading-relaxed text-ink/35 sm:px-8">
+          Trame générée à partir de tes réponses. Relis chaque ligne, complète les
+          champs entre crochets et vérifie les dates avant d&apos;envoyer.
+        </footer>
+      </article>
+
+      <div className="no-print mt-3 rounded-2xl border border-dashed border-ink/25 bg-sand/35 px-4 py-3">
+        <p className="text-[10px] font-black uppercase tracking-widest text-ink/40">
+          À compléter avant d&apos;envoyer
+        </p>
+        <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-ink/55">
+          {cv.placeholders.map((placeholder) => (
+            <li key={placeholder}>· {placeholder}</li>
+          ))}
+        </ul>
       </div>
-      <p className="mt-5 text-[10px] text-ink/35">
-        Brouillon généré à partir de tes réponses. Relis et adapte avant
-        d&apos;envoyer.
-      </p>
-    </div>
+    </>
+  );
+}
+
+function CvSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="break-inside-avoid">
+      <h4 className="border-b border-ink/15 pb-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-accent">
+        {title}
+      </h4>
+      <div className="mt-2">{children}</div>
+    </section>
   );
 }
 
@@ -1053,82 +1297,6 @@ function EmailCompose({
   );
 }
 
-function Radar({ theta }: { theta: Record<Riasec, number> }) {
-  const size = 230;
-  const cx = size / 2;
-  const cy = size / 2;
-  const radius = 76;
-  const angles = RIASEC.map((_, index) => -Math.PI / 2 + (index * Math.PI * 2) / 6);
-
-  const point = (index: number, value: number) => {
-    const r = radius * (0.12 + 0.88 * value);
-    return [cx + r * Math.cos(angles[index]), cy + r * Math.sin(angles[index])] as const;
-  };
-
-  const polygon = RIASEC.map((key, index) =>
-    point(index, Math.max(0.06, Math.min(1, theta[key]))).join(","),
-  ).join(" ");
-
-  return (
-    <svg
-      viewBox={`0 0 ${size} ${size}`}
-      className="mx-auto h-auto w-full max-w-[230px]"
-      role="img"
-      aria-label="Profil Holland"
-    >
-      {[0.25, 0.5, 0.75, 1].map((scale) => (
-        <polygon
-          key={scale}
-          points={RIASEC.map((_, index) => {
-            const r = radius * scale;
-            return `${cx + r * Math.cos(angles[index])},${cy + r * Math.sin(angles[index])}`;
-          }).join(" ")}
-          fill="none"
-          stroke="rgba(247,242,232,0.14)"
-        />
-      ))}
-      {RIASEC.map((_, index) => (
-        <line
-          key={index}
-          x1={cx}
-          y1={cy}
-          x2={cx + radius * Math.cos(angles[index])}
-          y2={cy + radius * Math.sin(angles[index])}
-          stroke="rgba(247,242,232,0.14)"
-        />
-      ))}
-      <polygon
-        points={polygon}
-        fill="rgba(255,90,54,0.3)"
-        stroke="#FF5A36"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-      {RIASEC.map((key, index) => {
-        const [x, y] = point(index, Math.max(0.06, Math.min(1, theta[key])));
-        const lx = cx + (radius + 20) * Math.cos(angles[index]);
-        const ly = cy + (radius + 20) * Math.sin(angles[index]);
-        return (
-          <g key={key}>
-            <circle cx={x} cy={y} r="3" fill={RIASEC_COLOR[key]} />
-            <text
-              x={lx}
-              y={ly}
-              textAnchor={Math.abs(lx - cx) < 6 ? "middle" : lx > cx ? "start" : "end"}
-              dominantBaseline="middle"
-              fill="rgba(247,242,232,0.7)"
-              fontSize="9"
-              fontWeight="800"
-            >
-              {key} · {RIASEC_LABEL[key]}
-            </text>
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
-
 function ScoreBar({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-xl bg-sand/50 px-2.5 py-2">
@@ -1145,45 +1313,6 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
           className="h-full rounded-full bg-ink/50"
           style={{ width: `${Math.round(value * 100)}%` }}
         />
-      </div>
-    </div>
-  );
-}
-
-function ChartBars({
-  title,
-  rows,
-}: {
-  title: string;
-  rows: { label: string; value: number; detail?: string }[];
-}) {
-  return (
-    <div className="rounded-2xl border border-ink/15 bg-paper p-4">
-      <p className="text-[10px] font-black uppercase tracking-widest text-ink/35">
-        {title}
-      </p>
-      <div className="mt-3 space-y-2.5">
-        {rows.map((row) => (
-          <div key={row.label}>
-            <div className="flex items-baseline justify-between gap-2">
-              <span className="truncate text-xs font-semibold text-ink/70">
-                {row.label}
-              </span>
-              <span className="text-[10px] font-bold text-ink/40">
-                {Math.round(row.value * 100)}
-              </span>
-            </div>
-            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-ink/10">
-              <div
-                className="h-full rounded-full bg-accent/70"
-                style={{ width: `${Math.round(row.value * 100)}%` }}
-              />
-            </div>
-            {row.detail && (
-              <p className="mt-0.5 text-[9px] text-ink/35">{row.detail}</p>
-            )}
-          </div>
-        ))}
       </div>
     </div>
   );

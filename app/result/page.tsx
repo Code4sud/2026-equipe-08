@@ -21,6 +21,7 @@ import { useRestart } from "../../lib/useRestart";
 import { useSession } from "../../lib/store";
 import { TRAIT_META, traitSummary } from "../../lib/traits";
 import { useMounted } from "../../lib/useMounted";
+import { HollandChart } from "../../components/Charts";
 import { RIASEC, TRAITS, type Riasec } from "../../lib/types";
 
 export default function ResultPage() {
@@ -195,7 +196,7 @@ export default function ResultPage() {
       )}
 
       <section className="hard-shadow mt-5 overflow-hidden rounded-[32px] border-2 border-ink bg-ink text-paper">
-        <div className="grid gap-6 p-6 sm:grid-cols-[1fr_240px] sm:items-center">
+        <div className="grid gap-6 p-6 sm:grid-cols-[1fr_320px] sm:items-center">
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.22em] text-paper/45">
               Ton profil
@@ -242,7 +243,7 @@ export default function ResultPage() {
           </div>
 
           <div className="-mx-2 sm:mx-0">
-            <Radar theta={radarTheta} />
+            <HollandChart theta={radarTheta} code={profile.code} />
             <p className="mt-1 text-center text-[9px] font-bold uppercase tracking-widest text-paper/30">
               profil relatif
             </p>
@@ -630,93 +631,5 @@ function ScoreBar({ label, value }: { label: string; value: number }) {
         />
       </div>
     </div>
-  );
-}
-
-function Radar({ theta }: { theta: Record<Riasec, number> }) {
-  const size = 260;
-  const cx = size / 2;
-  const cy = size / 2;
-  const radius = 88;
-  const angles = RIASEC.map(
-    (_, i) => -Math.PI / 2 + (i * Math.PI * 2) / 6,
-  );
-
-  const point = (index: number, value: number) => {
-    const r = radius * (0.12 + 0.88 * value);
-    return [
-      cx + r * Math.cos(angles[index]),
-      cy + r * Math.sin(angles[index]),
-    ] as const;
-  };
-
-  const polygon = RIASEC.map((key, i) =>
-    point(i, Math.max(0.06, Math.min(1, theta[key]))).join(","),
-  ).join(" ");
-
-  return (
-    <svg
-      viewBox={`0 0 ${size} ${size}`}
-      className="mx-auto h-auto w-full max-w-[260px]"
-      role="img"
-      aria-label={`Profil Holland ${RIASEC.map((k) => `${k}:${Math.round(theta[k] * 100)}`).join(", ")}`}
-    >
-      {[0.25, 0.5, 0.75, 1].map((scale) => (
-        <polygon
-          key={scale}
-          points={RIASEC.map((_, i) => {
-            const r = radius * scale;
-            return `${cx + r * Math.cos(angles[i])},${cy + r * Math.sin(angles[i])}`;
-          }).join(" ")}
-          fill="none"
-          stroke="rgba(247,242,232,0.14)"
-          strokeWidth="1"
-        />
-      ))}
-
-      {RIASEC.map((_, i) => (
-        <line
-          key={i}
-          x1={cx}
-          y1={cy}
-          x2={cx + radius * Math.cos(angles[i])}
-          y2={cy + radius * Math.sin(angles[i])}
-          stroke="rgba(247,242,232,0.14)"
-          strokeWidth="1"
-        />
-      ))}
-
-      <polygon
-        points={polygon}
-        fill="rgba(255,90,54,0.32)"
-        stroke="#FF5A36"
-        strokeWidth="2"
-        strokeLinejoin="round"
-      />
-
-      {RIASEC.map((key, i) => {
-        const [x, y] = point(i, Math.max(0.06, Math.min(1, theta[key])));
-        const lx = cx + (radius + 22) * Math.cos(angles[i]);
-        const ly = cy + (radius + 22) * Math.sin(angles[i]);
-        return (
-          <g key={key}>
-            <circle cx={x} cy={y} r="3.5" fill={RIASEC_COLOR[key]} />
-            <text
-              x={lx}
-              y={ly}
-              textAnchor={
-                Math.abs(lx - cx) < 6 ? "middle" : lx > cx ? "start" : "end"
-              }
-              dominantBaseline="middle"
-              fill="rgba(247,242,232,0.72)"
-              fontSize="10"
-              fontWeight="800"
-            >
-              {key} · {RIASEC_LABEL[key]}
-            </text>
-          </g>
-        );
-      })}
-    </svg>
   );
 }

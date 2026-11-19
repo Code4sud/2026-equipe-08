@@ -34,6 +34,11 @@ export type DemoExperience = {
   id: string;
   title: string;
   detail?: string;
+  /**
+   * Question de vécu à laquelle le jeune a répondu oui. Ce n'est pas une
+   * réponse libre : elle peut partir à l'IA, contrairement au récit complet.
+   */
+  proof?: string;
   source: "swipe" | "creuser" | "manuel";
   evidence: string[];
   competences?: string[];
@@ -146,18 +151,56 @@ export type DossierEmail = {
   subject: string;
   body: string;
   applicationUrl?: string;
+  company?: string;
+  jobLabel?: string;
 };
 
-export type DossierCvSection = {
-  heading: string;
-  items: { title: string; detail?: string; dates?: string }[];
+export type CvTarget = {
+  offerId?: string;
+  jobCode?: string;
+  /** Intitulé de l'offre, utilisé dans l'en-tête du CV. */
+  jobLabel: string;
+  /** Libellé ROME du métier, pour relier la formation. */
+  romeLabel?: string;
+  company?: string;
+  city?: string;
+  contract?: string;
+  salary?: string;
+  contact?: string;
+  url?: string;
+  competences: string[];
+  /** Savoir-être attendus par l'offre, pour cibler les soft skills. */
+  savoirEtre?: string[];
+};
+
+export type DossierCvExperience = {
+  id: string;
+  title: string;
+  organization?: string;
+  dates?: string;
+  bullets: string[];
+  softSkills: string[];
 };
 
 export type DossierCv = {
-  title: string;
+  target: CvTarget;
+  header: {
+    name: string;
+    title: string;
+    city: string;
+    email?: string;
+    phone?: string;
+    availability: string;
+    mobility: string;
+  };
   summary: string;
-  contact: { name: string; city: string; email?: string; phone?: string };
-  sections: DossierCvSection[];
+  experiences: DossierCvExperience[];
+  skills: { technical: string[]; soft: string[] };
+  education: { title: string; detail?: string; dates?: string }[];
+  languages: string[];
+  interests: string[];
+  /** Champs de la trame encore vides, à remplir par le jeune. */
+  placeholders: string[];
 };
 
 export type DossierActionStep = {
@@ -208,18 +251,49 @@ export type Dossier = {
   disclaimers: string[];
 };
 
-export type Narrative = {
+export type SynthesisNarrative = {
   headline: string;
   summary: string;
   strengths: { label: string; evidenceIds: string[] }[];
   directions: { id: string; why: string; watchout: string }[];
   trainings: { id: string; why: string }[];
-  cv: { title: string; summary: string; bullets: string[] };
-  emails: { offerId: string; subject: string; body: string }[];
   nextSteps: { title: string; detail: string; evidenceIds: string[] }[];
 };
 
+export type CvNarrative = {
+  /** Le CV est ciblé sur UNE offre : l'IA doit renvoyer la même. */
+  targetOfferId?: string;
+  title: string;
+  summary: string;
+  experiences: {
+    experienceId: string;
+    bullets: string[];
+    softSkills: string[];
+  }[];
+  softSkills: string[];
+  languages: string[];
+  interests: string[];
+};
+
+export type EmailsNarrative = {
+  emails: { offerId: string; subject: string; body: string }[];
+};
+
+export type Narrative = {
+  synthesis: SynthesisNarrative;
+  cv: CvNarrative;
+  emails: EmailsNarrative;
+};
+
+/** Réponse partielle : chaque section a son propre appel et son propre repli. */
+export type NarrativeSections = {
+  synthesis?: SynthesisNarrative | null;
+  cv?: CvNarrative | null;
+  emails?: EmailsNarrative | null;
+};
+
 export type DossierFacts = {
+  consents: { ai: boolean };
   profile: {
     code: string;
     domains: { id: string; label: string; score: number; confirmed: boolean }[];
@@ -230,18 +304,63 @@ export type DossierFacts = {
   directions: {
     id: string;
     title: string;
-    jobs: { code: string; label: string; level: string; competences: string[] }[];
+    jobs: {
+      code: string;
+      label: string;
+      level: string;
+      competences: string[];
+      savoirEtre: string[];
+      friction: string[];
+    }[];
     evidence: { id: string; text: string }[];
+    watchout?: string;
   }[];
-  trainings: { id: string; title: string; level: string; duration: string; establishments: string[] }[];
-  offers: { id: string; title: string; company: string; city: string }[];
+  trainings: {
+    id: string;
+    title: string;
+    level: string;
+    duration: string;
+    establishments: string[];
+    jobs: string[];
+    debouches: string[];
+    prerequisites: string[];
+    alternance: boolean;
+    cost?: string;
+    why: string;
+  }[];
+  offers: {
+    id: string;
+    title: string;
+    company: string;
+    city: string;
+    jobCode?: string;
+    jobLabel?: string;
+    contract?: string;
+    salary?: string;
+    contact?: string;
+    url?: string;
+    competences?: string[];
+  }[];
+  cvTarget: CvTarget;
+  softSkills: string[];
   user: {
     age: number;
     studiesLevel: string;
     status: string;
-    experience: { title: string; detail?: string }[];
+    /** Jamais le récit brut : titre + preuve + compétences ROME validées. */
+    experience: {
+      id: string;
+      title: string;
+      proof?: string;
+      competences?: string[];
+      source: string;
+    }[];
     mobilityKm: number;
     city: string;
+    contracts: string[];
+    availability: string;
+    alternance: boolean;
+    driverLicense: boolean;
   };
 };
 
@@ -255,5 +374,7 @@ export type BuildInput = {
   session: DossierSession;
   profile: Profile;
   user: DemoUser;
-  narrative?: Narrative | null;
+  /** Offre visée par le CV. Par défaut : la meilleure offre disponible. */
+  targetOfferId?: string;
+  narrative?: NarrativeSections | null;
 };

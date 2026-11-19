@@ -109,13 +109,17 @@ export async function POST(request: Request) {
       .filter((t): t is string => Boolean(t)),
   };
 
-  // Le cache tient compte des goûts : deux jeunes différents n'ont pas la même carte.
+  // Le cache tient compte de tout le contexte envoyé au LLM : deux jeunes
+  // avec les mêmes « oui » mais des « non » ou un historique différent ne
+  // doivent pas recevoir la même carte.
   const key = [
     plan.mode,
     plan.candidates.map((m) => m.code).join(","),
     plan.focus ?? "",
     plan.parent?.text ?? "",
     plan.mode === "explorer" ? ctx.liked.join("/") : "",
+    plan.mode === "explorer" ? ctx.disliked.join("/") : "",
+    ctx.recent.join("/"),
   ].join("|");
 
   let written = cache.get(key);
