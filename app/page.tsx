@@ -27,7 +27,7 @@ export default function Home() {
             <span className="grid h-9 w-9 place-items-center rounded-full bg-ink text-lg text-paper">
               ✳
             </span>
-            <span className="text-xl font-black tracking-tight">DÉCLIC</span>
+            <span className="text-xl font-black tracking-tight">ORIENTIS</span>
           </div>
           <span className="rounded-full border border-ink/20 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-ink/60">
             Démo · 2026
@@ -131,7 +131,7 @@ export default function Home() {
 
         <footer className="mt-8 flex flex-wrap items-center justify-between gap-3 text-[11px] text-ink/40">
           <span>
-            Déclic n&apos;est pas un test psychologique. Aucune déduction sur la
+            Orientis n&apos;est pas un test psychologique. Aucune déduction sur la
             santé, l&apos;origine, la famille ou la religion.
           </span>
           <span>Données ROME 4.0 v62 · France Travail · Licence Ouverte</span>

@@ -10,6 +10,7 @@ import type {
   Riasec,
   TraitResponse,
 } from "../types";
+import type { CvAnswers, CvField, Interview } from "../interview";
 
 export type StudiesLevel =
   | "sans-diplome"
@@ -35,6 +36,7 @@ export type DemoExperience = {
   detail?: string;
   source: "swipe" | "creuser" | "manuel";
   evidence: string[];
+  competences?: string[];
 };
 
 export type DemoUser = {
@@ -64,6 +66,10 @@ export type DossierSession = {
   generated: Card[];
   traitResponses: TraitResponse[];
   confirmations: Confirmation[];
+  interviews?: Interview[];
+  cv?: CvAnswers;
+  cvSkipped?: CvField[];
+  matchedSkills?: string[];
 };
 
 export type TrainingEstablishment = {

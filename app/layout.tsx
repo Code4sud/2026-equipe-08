@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Déclic — tes compétences cachées",
+  title: "Orientis — tes compétences cachées",
   description:
     "Un jeu de cartes pour révéler ce que tu sais faire, avec des preuves et des pistes concrètes.",
 };

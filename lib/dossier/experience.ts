@@ -62,6 +62,24 @@ export function extractExperience(session: DossierSession): DemoExperience[] {
     });
   }
 
+  // Étape 2 : les récits d'entretien sont la matière la plus riche du CV.
+  for (const interview of session.interviews ?? []) {
+    if (!interview.answers.some((answer) => answer.trim())) continue;
+    const key = `interview:${interview.cardId}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    const answers = interview.answers.filter((answer) => answer.trim());
+    out.push({
+      id: key,
+      title: interview.parentText,
+      detail: answers.join(" "),
+      source: "creuser",
+      evidence: [interview.proofText, ...answers],
+      competences: [interview.skill],
+    });
+  }
+
   return out;
 }
 

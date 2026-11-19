@@ -8,6 +8,8 @@ import {
   RIASEC_COLOR,
   RIASEC_LABEL,
   matchLevel,
+  statusLabel,
+  studiesLabel,
 } from "../../lib/presentation";
 import { useSession } from "../../lib/store";
 import { useMounted } from "../../lib/useMounted";
@@ -15,7 +17,12 @@ import {
   buildDossier,
   profileFromSession,
 } from "../../lib/dossier/build";
-import { DEMO_SESSION, loadDemoUser } from "../../lib/dossier/demo";
+import {
+  DEMO_SESSION,
+  demoUserFromDossier,
+  loadDemoUser,
+} from "../../lib/dossier/demo";
+import { toDossierUser } from "../../lib/interview";
 import {
   applyNarrative,
   buildFacts,
@@ -40,16 +47,36 @@ export default function DossierPage() {
   const generated = useSession((s) => s.generated);
   const traitResponses = useSession((s) => s.traitResponses);
   const confirmations = useSession((s) => s.confirmations);
+  const interviews = useSession((s) => s.interviews);
+  const cv = useSession((s) => s.cv);
 
   const liveSession = useMemo<DossierSession>(
-    () => ({ responses, generated, traitResponses, confirmations }),
-    [responses, generated, traitResponses, confirmations],
+    () => ({
+      responses,
+      generated,
+      traitResponses,
+      confirmations,
+      interviews,
+      cv,
+    }),
+    [responses, generated, traitResponses, confirmations, interviews, cv],
   );
   const isDemoSession = responses.length === 0;
   const session = isDemoSession ? DEMO_SESSION : liveSession;
 
   const profile = useMemo(() => profileFromSession(session), [session]);
-  const user = useMemo(() => loadDemoUser(), []);
+  const demoUser = useMemo(() => loadDemoUser(), []);
+  const sessionUser = useMemo(
+    () => toDossierUser(cv, interviews),
+    [cv, interviews],
+  );
+  const user = useMemo(
+    () =>
+      isDemoSession
+        ? demoUser
+        : demoUserFromDossier(sessionUser, demoUser),
+    [isDemoSession, demoUser, sessionUser],
+  );
   const base = useMemo(
     () => buildDossier({ session, profile, user }),
     [session, profile, user],
@@ -128,7 +155,7 @@ export default function DossierPage() {
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
-    anchor.download = "declic-dossier.json";
+    anchor.download = "orientis-dossier.json";
     anchor.click();
     URL.revokeObjectURL(url);
   }
@@ -207,8 +234,8 @@ export default function DossierPage() {
               {dossier.user.firstName}, {dossier.user.age} ans
             </h1>
             <p className="mt-2 text-sm font-semibold text-paper/70">
-              {dossier.user.city} · {dossier.user.studiesLevel} ·{" "}
-              {dossier.user.currentStatus}
+              {dossier.user.city} · {studiesLabel(dossier.user.studiesLevel)} ·{" "}
+              {statusLabel(dossier.user.currentStatus)}
             </p>
             <p className="mt-4 max-w-md text-sm leading-relaxed text-paper/60">
               {dossier.synthesis.summary}

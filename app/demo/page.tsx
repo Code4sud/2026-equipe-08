@@ -481,7 +481,7 @@ export default function DemoPage() {
         />
         <div className="mt-4 rounded-2xl border border-ink/15 bg-paper p-4">
           <p className="text-[10px] font-black uppercase tracking-widest text-ink/35">
-            Importé du swipe ({autoExperience.length})
+            Importé du swipe et des entretiens ({autoExperience.length})
           </p>
           <ul className="mt-2 space-y-1 text-sm text-ink/65">
             {autoExperience.map((item) => (
@@ -493,7 +493,7 @@ export default function DemoPage() {
           </ul>
 
           <p className="mt-5 text-[10px] font-black uppercase tracking-widest text-ink/35">
-            Ajouté à la main ({user.experience.length})
+            Expériences du profil ({user.experience.length})
           </p>
           <ul className="mt-2 space-y-1 text-sm text-ink/65">
             {user.experience.map((item) => (

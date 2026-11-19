@@ -1,10 +1,10 @@
 {
   "nom": "Orientis",
-  "pitch": "Work in Progress",
-  "description": "",
+  "pitch": "Révèle tes compétences cachées et trouve ta direction.",
+  "description": "Un jeu de cartes qui fait raconter, relie les situations vécues au ROME et rend au jeune ses compétences avec ses preuves. Dossier complet : 3 directions, formations, offres locales, CV et emails.",
   "ecoles": ["AIVANCITY", "42 Nice"],
-  "stack": ["Claude", "nextjs"],
-  "demo": "https://code4sud.github.io/2026-equipe-08/",
+  "stack": ["Claude", "Next.js", "ROME 4.0"],
+  "demo": "https://declic-livid.vercel.app",
   "video": "https://www.youtube.com/watch?v=XXXXXXXXXXX",
   "captures": ["captures/accueil.png", "captures/resultat.png"]
 }

@@ -25,8 +25,13 @@ describe("dossier de démonstration", () => {
 
   it("extrait le vécu de la session, pas du dossier exporté", () => {
     const titles = dossier.experience.map((item) => item.title);
-    expect(titles).toContain("Réparer un équipement, une machine, une installation");
+    const competences = dossier.experience.flatMap(
+      (item) => item.competences ?? [],
+    );
     expect(titles).toContain("Réparer un vélo crevé");
+    expect(competences).toContain(
+      "Réparer un équipement, une machine, une installation",
+    );
     expect(titles.length).toBeGreaterThanOrEqual(4);
   });
 
@@ -54,7 +59,7 @@ describe("dossier de démonstration", () => {
   });
 
   it("produit un CV et des emails à partir des données", () => {
-    expect(dossier.cv.contact.name).toContain("Ilaf");
+    expect(dossier.cv.contact.name).toContain("Sam");
     expect(dossier.cv.sections.length).toBeGreaterThan(2);
     expect(dossier.cv.summary.length).toBeGreaterThan(40);
     expect(dossier.emails[0].subject).toMatch(/Candidature/);

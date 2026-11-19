@@ -12,7 +12,7 @@ import { completeJson } from "./llm";
  * de repli (`fallbackQuestions`).
  */
 
-export const QUESTIONS_SYSTEM_PROMPT = `Tu prépares un mini-entretien pour Déclic, une app qui aide des jeunes de 17 à 25 ans en décrochage, suivis en mission locale, à mettre des mots sur ce qu'ils savent faire. Beaucoup pensent qu'ils ne savent "rien faire".
+export const QUESTIONS_SYSTEM_PROMPT = `Tu prépares un mini-entretien pour Orientis, une app qui aide des jeunes de 17 à 25 ans en décrochage, suivis en mission locale, à mettre des mots sur ce qu'ils savent faire. Beaucoup pensent qu'ils ne savent "rien faire".
 
 Le jeune vient de dire qu'il a DÉJÀ vécu une situation précise. On te donne cette situation et la compétence du répertoire ROME (France Travail) qu'elle prouve. Tu écris ${PROJECT_QUESTION_COUNT} questions ouvertes pour lui faire raconter CETTE expérience, de quoi écrire ensuite une ligne de CV crédible.
 

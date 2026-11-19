@@ -1,4 +1,4 @@
-# Échantillons de profil Déclic
+# Échantillons de profil Orientis
 
 Profil **fictif** (« manuel + tech »), calculé par le vrai code du projet (score, swipe adaptatif, matching) à partir d'une session de 24 swipes et des 15 paires de style. Les textes des 7 cartes adaptatives sont écrits à la main dans le style du LLM ; leurs cibles ROME viennent de l'algorithme. L'étape 2 (« Creuser ») contient deux expériences racontées : 3 questions chacune, réellement générées par le LLM, avec des réponses fictives (une question passée = réponse vide). Elle contient aussi 6 infos CV fictives, collectées au fil des deux récits (3 par récit). Le permis et la mobilité n'ont pas encore été demandés : ils l'auraient été au récit suivant. `user.constraints` est donc absent. C'est un cas normal, que le CV doit savoir gérer.
 

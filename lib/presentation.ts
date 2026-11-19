@@ -81,3 +81,29 @@ export function shortCenter(id: string): string {
 export function domainLabel(id: string): string {
   return CENTER_BY_ID[id]?.label ?? id;
 }
+
+export function studiesLabel(level: string): string {
+  const labels: Record<string, string> = {
+    "sans-diplome": "Sans diplôme",
+    "cap-bep": "CAP / BEP",
+    "bac": "Bac",
+    "bac+2": "Bac +2",
+    "bac+3": "Bac +3",
+    "bac+5": "Bac +5",
+    "autre": "Autre",
+  };
+  return labels[level] ?? level;
+}
+
+export function statusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    college: "Collège",
+    lycee: "Lycée",
+    etudes: "Études",
+    alternance: "Alternance",
+    recherche: "Recherche d'emploi / formation",
+    emploi: "En emploi",
+    inactif: "Ni en emploi ni en études",
+  };
+  return labels[status] ?? status;
+}

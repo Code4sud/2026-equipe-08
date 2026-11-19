@@ -31,6 +31,10 @@ export type SessionSnapshot = {
   generated: Card[];
   traitResponses: TraitResponse[];
   confirmations: Confirmation[];
+  interviews?: Interview[];
+  cv?: CvAnswers;
+  cvSkipped?: CvField[];
+  matchedSkills?: string[];
 };
 
 type SessionState = {

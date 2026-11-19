@@ -52,7 +52,7 @@ export default function StylePage() {
             ←
           </button>
           <span className="text-xs font-black uppercase tracking-[0.2em]">
-            Déclic
+            Orientis
           </span>
           <span className="w-9" />
         </div>
@@ -101,7 +101,7 @@ export default function StylePage() {
             ←
           </button>
           <span className="text-xs font-black uppercase tracking-[0.2em]">
-            Déclic
+            Orientis
           </span>
           <span className="w-9 text-right text-xs font-bold text-ink/40">
             {traitResponses.length}/{PAIRS.length}

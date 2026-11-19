@@ -7,7 +7,7 @@ import {
   matchJobs,
   profileHeadline,
 } from "../match";
-import { jobLevel, shortCenter } from "../presentation";
+import { jobLevel, shortCenter, studiesLabel } from "../presentation";
 import {
   computeProfile,
   resolveConfirmation,
@@ -204,11 +204,15 @@ function makeCv(
   const topTraining = trainings[0];
   const confirmed = profile.confirmed.map(shortCenter);
   const name = `${user.firstName} ${user.lastName ?? ""}`.trim();
-  const top = confirmed.join(", ") || synthesis.headline;
   const experienceText = experience
     .slice(0, 3)
     .map((item) => item.title)
     .join(", ");
+  const experienceCompetences = experience.flatMap(
+    (item) => item.competences ?? [],
+  );
+  const competences = [...new Set([...confirmed, ...experienceCompetences])];
+  const top = confirmed.join(", ") || synthesis.headline;
 
   return {
     title: `${synthesis.headline || "Mon profil"} — ${user.alternance ? "alternance" : "emploi"}`,
@@ -233,16 +237,18 @@ function makeCv(
       },
       {
         heading: "Compétences validées",
-        items: confirmed.map((label) => ({
+        items: competences.map((label) => ({
           title: label,
-          detail: "Domaine confirmé par toi",
+          detail: confirmed.includes(label)
+            ? "Domaine confirmé par toi"
+            : "Compétence issue d'un récit",
         })),
       },
       {
         heading: "Formation",
         items: [
           {
-            title: `Niveau actuel : ${user.studiesLevel}`,
+            title: `Niveau actuel : ${studiesLabel(user.studiesLevel)}`,
           },
           ...(topTraining
             ? [
@@ -326,9 +332,11 @@ function makeActionPlan(
 export function buildDossier(input: BuildInput): Dossier {
   const { session, profile, user } = input;
   const allCards = [...CARDS, ...session.generated];
+  // Le `user` vient de l'étape 2 (réponses d'entretien) : il est plus riche
+  // que la simple trace des swipes, donc il passe devant dans le CV.
   const experience = mergeExperience(
-    extractExperience(session),
     user.experience,
+    extractExperience(session),
   );
   const matches = matchJobs(profile, JOBS, allCards, JOBS.length);
   const directions = makeDirections(matches, profile);

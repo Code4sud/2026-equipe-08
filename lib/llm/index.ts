@@ -2,7 +2,7 @@ import type { z } from "zod";
 import { runClaudeCli } from "./cli";
 
 /**
- * Couche LLM unique de Déclic. Toutes les features passent par ici.
+ * Couche LLM unique d'Orientis. Toutes les features passent par ici.
  *
  * LLM_BACKEND (dans .env.local) :
  *   - "mock" (défaut) : aucun appel, renvoie null → chaque feature a un repli

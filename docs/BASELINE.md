@@ -1,7 +1,7 @@
 # Baseline — Détecteur de potentiel caché
 
 > Statut : décisions verrouillées le 18/11/2026. Base de code en cours.
-> Nom de travail : **Déclic** (à valider).
+> Nom de travail : **Orientis** (à valider).
 > Contrainte : **3 jours (livraison vendredi), 6 personnes, pas de stack imposée.**
 > Public : **17–25 ans**, mission locale / décrochage.
 > Décisions : swipe **droite/gauche** uniquement (pas de voix) · import **ROME 4.0 v62** · sortie **3 directions + short-list** · autonomie vis-à-vis des supports fournis.
@@ -558,7 +558,7 @@ Ne pas promettre d'« accuracy ». Promettre : **couverture, stabilité, traçab
 - Export JSON + page imprimable, local-first.
 
 **Restant à trancher (impact faible, peut attendre) :**
-1. **Nom** : « Déclic » ou autre chose ?
+1. **Nom** : « Orientis » ou autre chose ?
 2. **Récit texte** : on le garde dans le sprint (1 dev) ou on le coupe tout de suite ?
 3. **Hébergement de la démo** : local (plus sûr en hackathon) ou Vercel ?
 4. **Curation** : qui relit les 3 métiers par direction pour éviter les intrus ROME (ex. « panéliste ») ?

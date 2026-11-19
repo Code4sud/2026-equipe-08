@@ -1,11 +1,11 @@
 # Swipe adaptatif — plan et décisions techniques
 
-> Étape 1 du parcours Déclic : **Swipe adaptatif → Quiz (4-5 questions, voix) → CV → RDV & entreprises**.
+> Étape 1 du parcours Orientis : **Swipe adaptatif → Quiz (4-5 questions, voix) → CV → RDV & entreprises**.
 > Statut : moteur et branchement faits, en mode `mock` et `cli`. Reste : brancher le mode `api`, régler les prompts avec de vraies réponses, curer le lien carte ↔ ROME.
 
 ## En une phrase
 
-Après quelques cartes de la banque fixe, Déclic **écrit des cartes pour le jeune** : il en choisit le sujet (une compétence ROME) à partir de ses réponses, puis un LLM rédige la situation. Un « déjà fait » déclenche une carte qui **creuse** ce vécu.
+Après quelques cartes de la banque fixe, Orientis **écrit des cartes pour le jeune** : il en choisit le sujet (une compétence ROME) à partir de ses réponses, puis un LLM rédige la situation. Un « déjà fait » déclenche une carte qui **creuse** ce vécu.
 
 ```
 banque fixe ──► swipe ──► état (réponses + cartes générées)

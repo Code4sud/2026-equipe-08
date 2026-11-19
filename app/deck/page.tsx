@@ -356,7 +356,7 @@ function Header({
           </button>
         </div>
         <span className="text-xs font-black uppercase tracking-[0.2em]">
-          Déclic
+          Orientis
         </span>
         <span className="text-right text-xs font-bold text-ink/40">
           {countLabel}

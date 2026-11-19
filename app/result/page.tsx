@@ -103,7 +103,7 @@ export default function ResultPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "declic-dossier.json";
+    a.download = "orientis-dossier.json";
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -160,7 +160,7 @@ export default function ResultPage() {
           </button>
         </div>
         <span className="text-xs font-black uppercase tracking-[0.2em]">
-          Déclic
+          Orientis
         </span>
         <div className="flex items-center gap-2">
           <button
@@ -469,7 +469,7 @@ export default function ResultPage() {
 
       <footer className="no-print mt-12 border-t border-ink/15 pt-6">
         <p className="text-xs leading-relaxed text-ink/40">
-          Déclic n&apos;est pas un test psychologique et ne prédit pas ta
+          Orientis n&apos;est pas un test psychologique et ne prédit pas ta
           réussite. Aucune déduction sur la santé, l&apos;origine, la famille ou
           la religion. Tu valides ce qui est retenu, tu peux tout supprimer.
           Données ROME 4.0 v62 · France Travail · Licence Ouverte.
