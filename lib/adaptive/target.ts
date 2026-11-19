@@ -8,7 +8,7 @@ import type {
   SwipeReason,
   TargetMode,
 } from "../types";
-import { getMacro, poolFor, type Macro } from "./skills";
+import { getMacro, poolFor, swipeTargets, type Macro } from "./skills";
 
 /**
  * Swipe adaptatif : le CODE choisit de quoi on parle, le LLM n'écrit que la
@@ -107,6 +107,11 @@ export type TargetPlan = {
   /** Compétence fine à approfondir (mode creuser sur une carte générée). */
   focus?: string;
   parent?: Card;
+  /**
+   * Short-list sans lien lexical avec la carte parente : seul un LLM peut y
+   * trouver la bonne compétence. Sans LLM, ce plan est abandonné.
+   */
+  loose?: boolean;
 };
 
 export function pickTarget({
@@ -114,18 +119,21 @@ export function pickTarget({
   responses,
   cards,
   rand = Math.random,
+  allowLoose = true,
 }: {
   profile: Profile;
   responses: Response[];
   /** Toutes les cartes connues : banque + générées (jouées ou en file). */
   cards: Card[];
   rand?: () => number;
+  /** false quand aucun LLM ne pourra choisir dans une short-list floue. */
+  allowLoose?: boolean;
 }): TargetPlan | null {
   const cov = coverage(responses, cards);
 
   if (cov.creuserCount < MAX_CREUSER) {
     for (const parent of cov.aCreuser) {
-      const plan = creuserPlan(parent, cov, cards);
+      const plan = creuserPlan(parent, cov, cards, allowLoose);
       if (plan) return plan;
     }
   }
@@ -133,7 +141,12 @@ export function pickTarget({
   return explorerPlan(profile, responses, cards, cov, rand);
 }
 
-function creuserPlan(parent: Card, cov: Coverage, cards: Card[]): TargetPlan | null {
+function creuserPlan(
+  parent: Card,
+  cov: Coverage,
+  cards: Card[],
+  allowLoose: boolean,
+): TargetPlan | null {
   // Carte générée : on reste sur la même compétence et on descend d'un cran.
   if (parent.target) {
     const macro = getMacro(parent.target.macro);
@@ -157,7 +170,15 @@ function creuserPlan(parent: Card, cov: Coverage, cards: Card[]): TargetPlan | n
     .slice(0, 2)
     .map(([id]) => id);
 
-  const pools = centers.map((c) => poolFor(c).filter((m) => !cov.macros.has(m.code)));
+  // 1. Correspondance de mots entre la carte et les libellés ROME
+  //    ("Gérer la caisse d'une asso" -> "Gérer une caisse").
+  // 2. Puis les viviers de ses 2 centres principaux, en alternance.
+  const lexical = lexicalMatches(parent.text).filter((m) => !cov.macros.has(m.code));
+  if (lexical.length === 0 && !allowLoose) return null;
+  const pools = [
+    lexical,
+    ...centers.map((c) => poolFor(c).filter((m) => !cov.macros.has(m.code))),
+  ];
   const candidates: Macro[] = [];
   for (let i = 0; candidates.length < CREUSER_CANDIDATES; i++) {
     let added = false;
@@ -177,7 +198,70 @@ function creuserPlan(parent: Card, cov: Coverage, cards: Card[]): TargetPlan | n
     center: centers[0] ?? dominantCenter(parent),
     candidates: candidates.slice(0, CREUSER_CANDIDATES),
     parent,
+    loose: lexical.length === 0,
   };
+}
+
+// Racines (5 lettres, sans accents) trop vagues pour relier une carte à ROME.
+const STOP = new Set([
+  "avec", "pour", "dans", "sans", "chez", "tout", "toute", "comme", "entre",
+  "plusi", "petit", "autre", "pays", "gens", "perso", "quelq", "truc", "plus",
+  "ville", "quart", "jours", "march", "trava", "aider", "tenir", "faire",
+  "avoir", "etre", "meme", "vieux", "seul", "zero",
+]);
+
+const normalize = (s: string) =>
+  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+/** Racine grossière : 5 premières lettres ("réparer" ~ "réparation"). */
+const stems = (s: string) =>
+  normalize(s)
+    .split(/[^a-z]+/)
+    .filter((w) => w.length >= 4)
+    .map((w) => w.slice(0, 5))
+    .filter((w) => !STOP.has(w));
+
+/**
+ * IDF des racines sur les libellés ROME ciblables : un mot présent partout
+ * ("réaliser", "gérer") ne prouve rien, un mot rare ("caisse") beaucoup.
+ */
+let idfCache: Map<string, number> | null = null;
+function idf(): Map<string, number> {
+  if (idfCache) return idfCache;
+  const targets = swipeTargets();
+  const df = new Map<string, number>();
+  for (const m of targets) {
+    const words = new Set([m.label, ...m.children.map((c) => c.label)].flatMap(stems));
+    for (const w of words) df.set(w, (df.get(w) ?? 0) + 1);
+  }
+  idfCache = new Map([...df].map(([w, n]) => [w, Math.log(targets.length / n)]));
+  return idfCache;
+}
+
+/** Seuil : environ un mot rare partagé avec le libellé, ou deux avec les compétences fines. */
+const LEXICAL_MIN = 4;
+
+/** Macros dont le libellé (×2) ou les compétences fines partagent des mots rares avec le texte. */
+export function lexicalMatches(text: string, limit = 3): Macro[] {
+  const wanted = new Set(stems(text));
+  if (wanted.size === 0) return [];
+  const weights = idf();
+  return swipeTargets()
+    .map((m) => {
+      const label = new Set(stems(m.label));
+      const children = new Set(m.children.flatMap((c) => stems(c.label)));
+      let score = 0;
+      for (const w of wanted) {
+        const weight = weights.get(w) ?? 0;
+        if (label.has(w)) score += 2 * weight;
+        else if (children.has(w)) score += weight;
+      }
+      return { m, score };
+    })
+    .filter((x) => x.score >= LEXICAL_MIN)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, limit)
+    .map((x) => x.m);
 }
 
 function explorerPlan(

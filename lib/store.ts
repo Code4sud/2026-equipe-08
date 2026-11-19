@@ -102,9 +102,14 @@ const initialState = {
   failures: 0,
 };
 
+const isGenerated = (id: string) => id.startsWith("gen-");
+
 /**
- * Carte suivante : d'abord une carte adaptative prête dans la file, sinon la
- * banque fixe (sélection UCB existante). La file n'attend jamais le LLM.
+ * Carte suivante. La file n'attend jamais le LLM :
+ * - une carte "creuser" prête passe devant tout (elle rebondit sur un "déjà fait") ;
+ * - sinon on alterne banque fixe et carte adaptative, pour garder les
+ *   situations écrites à la main et limiter les appels LLM ;
+ * - à défaut, la banque fixe (sélection UCB existante).
  */
 function pickNext(
   queue: string[],
@@ -113,11 +118,17 @@ function pickNext(
 ): { id: string | null; queue: string[] } {
   if (responses.length >= MAX_RESPONSES) return { id: null, queue };
   const seen = new Set(responses.map((r) => r.cardId));
-  const queued = queue.find((id) => !seen.has(id));
-  if (queued) {
-    return { id: queued, queue: queue.filter((id) => id !== queued && !seen.has(id)) };
-  }
-  return { id: nextCard(profile, responses)?.id ?? null, queue };
+  const pending = queue.filter((id) => !seen.has(id));
+  const take = (id: string) => ({ id, queue: pending.filter((x) => x !== id) });
+
+  const creuser = pending.find((id) => id.startsWith("gen-creuser-"));
+  if (creuser) return take(creuser);
+
+  const last = responses.at(-1);
+  const bank = nextCard(profile, responses);
+  if (pending[0] && (!last || !isGenerated(last.cardId) || !bank)) return take(pending[0]);
+
+  return { id: bank?.id ?? pending[0] ?? null, queue: bank ? pending : pending.slice(1) };
 }
 
 export const useSession = create<SessionState>()(

@@ -218,7 +218,7 @@ for (const macro of macros.values()) {
 const MAX_PREVALENCE = 0.3;
 // Cibles exclues du swipe : actes cliniques et thèmes qui pousseraient le
 // générateur vers la santé ou la vie privée du jeune.
-const SENSITIVE_TARGET = /psycholog|th[ée]rap|m[ée]dic|patient|soins? infirm|prescri|fun[ée]raire|d[ée]funt|religi|culte|sinistre/i;
+const SENSITIVE_TARGET = /psycholog|chirurg|sanitaire|th[ée]rap|m[ée]dic|patient|soins? infirm|prescri|fun[ée]raire|d[ée]funt|religi|culte|sinistre/i;
 const swipeable = (m) =>
   m.kind === "sf" &&
   !SENSITIVE_TARGET.test(m.label) &&

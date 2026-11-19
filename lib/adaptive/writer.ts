@@ -45,16 +45,15 @@ const SENSITIVE = new RegExp(
     "papiers",
     "titre de s[ée]jour",
     "\\bethni",
-    "\\btes? (m[èe]re|maman|p[èe]re|papa|parents?|fr[èe]res?|s(œ|oe)urs?|famille)",
-    "\\bta (m[èe]re|maman|famille|s(œ|oe)ur)",
-    "\\bton (p[èe]re|papa|fr[èe]re)",
+    // possessif + 0 à 2 mots + lien familial ("ton petit frère", "tes grands-parents")
+    "\\b(ton|ta|tes|mon|ma|mes|sa|son|ses)\\s+([\\p{L}-]+\\s+){0,2}(m[èe]res?|maman|p[èe]res?|papa|parents?|fr[èe]res?|s(œ|oe)urs?|famille|cousins?|cousines?|oncles?|tantes?|grands?-parents?|grand-m[èe]re|grand-p[èe]re|enfants?|fils|filles?)\\b",
     "enceinte",
     "sexualit",
     "politique",
     "argent de poche",
     "\\bdettes?\\b",
   ].join("|"),
-  "i",
+  "iu",
 );
 
 const MAX_TEXT = 80;

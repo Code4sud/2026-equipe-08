@@ -48,6 +48,13 @@ export function poolFor(center: CenterId): Macro[] {
     .filter((m): m is Macro => Boolean(m));
 }
 
+const TARGET_CODES = new Set(Object.values(SKILLS.byCenter).flat());
+
 export function isSwipeTarget(code: number): boolean {
-  return Object.values(SKILLS.byCenter).some((list) => list.includes(code));
+  return TARGET_CODES.has(code);
+}
+
+/** Toutes les macros ciblables en swipe (union des viviers). */
+export function swipeTargets(): Macro[] {
+  return [...TARGET_CODES].map((code) => getMacro(code)).filter((m): m is Macro => Boolean(m));
 }

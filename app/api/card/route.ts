@@ -2,7 +2,7 @@ import { z } from "zod";
 import { CARDS } from "../../../content/cards";
 import { getMacro } from "../../../lib/adaptive/skills";
 import { buildCard, pickTarget } from "../../../lib/adaptive/target";
-import { writeCard, type WrittenCard } from "../../../lib/adaptive/writer";
+import { templateDraft, writeCard, type WrittenCard } from "../../../lib/adaptive/writer";
 import { CENTER_IDS } from "../../../lib/centers";
 import { llmBackend } from "../../../lib/llm";
 import { computeProfile } from "../../../lib/score";
@@ -85,8 +85,9 @@ export async function POST(request: Request) {
   const responses = parsed.data.responses.map((r, i) => ({ ...r, ts: i }));
   const profile = computeProfile(responses, [], cards);
 
-  const plan = pickTarget({ profile, responses, cards });
-  if (!plan) return Response.json({ card: null, backend: llmBackend() });
+  const backend = llmBackend();
+  let plan = pickTarget({ profile, responses, cards, allowLoose: backend !== "mock" });
+  if (!plan) return Response.json({ card: null, backend });
 
   const cardById = new Map(cards.map((c) => [c.id, c]));
   const recentTexts = responses
@@ -110,6 +111,13 @@ export async function POST(request: Request) {
     }
   }
 
+  // LLM en échec sur une short-list floue : on ne devine pas, on explore.
+  if (written.source === "template" && plan.loose) {
+    plan = pickTarget({ profile, responses, cards, allowLoose: false });
+    if (!plan) return Response.json({ card: null, backend });
+    written = { macro: plan.candidates[0], draft: templateDraft(plan, plan.candidates[0]), source: "template" };
+  }
+
   const card = buildCard(plan, written.macro, written.draft, written.source);
-  return Response.json({ card, backend: llmBackend() });
+  return Response.json({ card, backend });
 }
