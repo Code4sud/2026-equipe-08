@@ -53,43 +53,7 @@ export function nextCard(
   );
 
   const phase1 = responses.length < 15;
-  const priorities = new Map<CenterId, number>();
-
-  const active = CENTER_IDS.filter((id) => {
-    const d = profile.domains[id];
-    return !d.confirmed && !d.rejected;
-  });
-
-  // Le set de focus se resserre : 30 -> 12 -> 6 domaines.
-  // C'est le comportement "Tinder" : plus on apprend, plus on montre
-  // ce qui ressemble au profil, sans jamais couper l'exploration.
-  const focusSize = responses.length < 15 ? 30 : responses.length < 25 ? 12 : 6;
-  const focus = new Set(
-    [...active]
-      .sort((a, b) => profile.domains[b].mean - profile.domains[a].mean)
-      .slice(0, focusSize),
-  );
-
-  for (const id of active) {
-    const domain = profile.domains[id];
-
-    if (phase1) {
-      // Couverture : les domaines jamais vus passent devant.
-      priorities.set(id, (domain.nEff < 0.6 ? 2 : 0) + (1 - domain.confidence));
-      continue;
-    }
-
-    // UCB : exploitation de la moyenne + exploration des domaines
-    // encore incertains. c = 0,38 règle le compromis.
-    const bonus =
-      0.38 *
-      Math.sqrt(Math.log(responses.length + 2) / (domain.nEff + 0.5));
-
-    priorities.set(
-      id,
-      (domain.mean + bonus) * (focus.has(id) ? 1 : 0.35),
-    );
-  }
+  const priorities = centerPriorities(profile, responses.length);
 
   let best: Card | null = null;
   let bestScore = -Infinity;
@@ -138,6 +102,53 @@ export function nextCard(
     unseen[0] ??
     null
   );
+}
+
+/**
+ * Priorité de sondage de chaque domaine encore ouvert.
+ * Phase 1 (< 15 réponses) : couverture. Ensuite : UCB resserré sur le focus.
+ * Partagé par le deck fixe (`nextCard`) et le swipe adaptatif (`pickTarget`).
+ */
+export function centerPriorities(
+  profile: Profile,
+  answered: number,
+): Map<CenterId, number> {
+  const phase1 = answered < 15;
+  const priorities = new Map<CenterId, number>();
+
+  const active = CENTER_IDS.filter((id) => {
+    const d = profile.domains[id];
+    return !d.confirmed && !d.rejected;
+  });
+
+  // Le set de focus se resserre : 30 -> 12 -> 6 domaines.
+  // C'est le comportement "Tinder" : plus on apprend, plus on montre
+  // ce qui ressemble au profil, sans jamais couper l'exploration.
+  const focusSize = answered < 15 ? 30 : answered < 25 ? 12 : 6;
+  const focus = new Set(
+    [...active]
+      .sort((a, b) => profile.domains[b].mean - profile.domains[a].mean)
+      .slice(0, focusSize),
+  );
+
+  for (const id of active) {
+    const domain = profile.domains[id];
+
+    if (phase1) {
+      // Couverture : les domaines jamais vus passent devant.
+      priorities.set(id, (domain.nEff < 0.6 ? 2 : 0) + (1 - domain.confidence));
+      continue;
+    }
+
+    // UCB : exploitation de la moyenne + exploration des domaines
+    // encore incertains. c = 0,38 règle le compromis.
+    const bonus =
+      0.38 * Math.sqrt(Math.log(answered + 2) / (domain.nEff + 0.5));
+
+    priorities.set(id, (domain.mean + bonus) * (focus.has(id) ? 1 : 0.35));
+  }
+
+  return priorities;
 }
 
 export function nextTraitPair(

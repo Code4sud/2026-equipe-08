@@ -16,7 +16,7 @@ import { cardTone } from "../../lib/presentation";
 import { useRestart } from "../../lib/useRestart";
 import { useSession } from "../../lib/store";
 import { useMounted } from "../../lib/useMounted";
-import type { SwipeDirection, SwipeReason } from "../../lib/types";
+import type { Card, SwipeDirection, SwipeReason } from "../../lib/types";
 
 const TARGET = 35;
 
@@ -26,6 +26,13 @@ const LEFT_REASONS: { id: SwipeReason; label: string }[] = [
   { id: "pas-capable", label: "Peur de pas y arriver" },
   { id: "pas-les-moyens", label: "Pas les moyens" },
   { id: "pas-pres", label: "Pas près de chez moi" },
+];
+
+// Après un oui : "déjà fait" ouvre une carte "creuser" (swipe adaptatif).
+const RIGHT_REASONS: { id: SwipeReason; label: string }[] = [
+  { id: "deja-souvent", label: "Déjà fait souvent" },
+  { id: "deja-une-fois", label: "Déjà fait une fois" },
+  { id: "jamais-fait-mais-tente", label: "Jamais fait, mais ça me tente" },
 ];
 
 export default function DeckPage() {
@@ -42,6 +49,7 @@ export default function DeckPage() {
   const setReason = useSession((s) => s.setReason);
   const resolvePending = useSession((s) => s.resolvePending);
   const startStyle = useSession((s) => s.startStyle);
+  const generated = useSession((s) => s.generated);
 
   const shownAt = useRef(0);
 
@@ -55,7 +63,8 @@ export default function DeckPage() {
 
   const profile = useSession.getState().getProfile();
 
-  const card = CARDS.find((c) => c.id === currentCardId) ?? null;
+  const allCards = [...CARDS, ...generated];
+  const card = allCards.find((c) => c.id === currentCardId) ?? null;
   const tone = card ? cardTone(card) : null;
 
   const activeDomains = CENTER_IDS.filter(
@@ -71,16 +80,15 @@ export default function DeckPage() {
 
   const lastCardResponse =
     lastResponse?.kind === "card" ? responses[lastResponse.index] : null;
-  const showReasons =
-    !pending &&
-    lastCardResponse?.direction === "left" &&
-    responses.length > 0;
+  const showReasons = !pending && Boolean(lastCardResponse) && responses.length > 0;
+  const reasons =
+    lastCardResponse?.direction === "right" ? RIGHT_REASONS : LEFT_REASONS;
 
   const pendingCenter = pending ? CENTER_BY_ID[pending] : null;
   const pendingCards =
     pending && profile
       ? profile.domains[pending].likedCards
-          .map((id) => CARDS.find((c) => c.id === id)?.text)
+          .map((id) => allCards.find((c) => c.id === id)?.text)
           .filter((x): x is string => Boolean(x))
           .slice(0, 3)
       : [];
@@ -208,10 +216,12 @@ export default function DeckPage() {
               className="mt-3"
             >
               <p className="mb-2 text-center text-[11px] font-bold uppercase tracking-widest text-ink/40">
-                Pourquoi ? (optionnel)
+                {lastCardResponse?.direction === "right"
+                  ? "Tu l'as déjà fait ? (optionnel)"
+                  : "Pourquoi ? (optionnel)"}
               </p>
               <div className="no-scrollbar flex gap-2 overflow-x-auto pb-1">
-                {LEFT_REASONS.map((reason) => {
+                {reasons.map((reason) => {
                   const active = lastCardResponse?.reason === reason.id;
                   return (
                     <button
@@ -317,7 +327,7 @@ function SwipeCard({
   onSwipe,
   disabled,
 }: {
-  card: (typeof CARDS)[number];
+  card: Card;
   tone: { bg: string; ink: string };
   onSwipe: (direction: SwipeDirection) => void;
   disabled: boolean;
@@ -351,7 +361,7 @@ function SwipeCard({
         style={{ backgroundColor: tone.bg, color: tone.ink }}
       >
         <span className="text-[10px] font-black uppercase tracking-[0.18em]">
-          Ta prochaine carte
+          {cardBadge(card)}
         </span>
         <span className="text-lg">{card.emoji}</span>
       </div>
@@ -469,4 +479,11 @@ function ConfirmationOverlay({
       </motion.div>
     </motion.div>
   );
+}
+
+/** Le jeune voit quand une carte a été écrite pour lui (adaptativité visible). */
+function cardBadge(card: Card): string {
+  if (card.target?.mode === "creuser") return "On creuse un peu";
+  if (card.target) return "Carte rien que pour toi";
+  return "Ta prochaine carte";
 }
