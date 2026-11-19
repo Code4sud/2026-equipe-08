@@ -1,0 +1,10 @@
+{
+  "nom": "Declic",
+  "pitch": "En préparation",
+  "description": "",
+  "ecoles": ["AIVANCITY", "42 Nice"],
+  "stack": ["Claude", "nextjs"],
+  "demo": "https://code4sud.github.io/2026-equipe-08/",
+  "video": "https://www.youtube.com/watch?v=XXXXXXXXXXX",
+  "captures": ["captures/accueil.png", "captures/resultat.png"]
+}
