@@ -1,5 +1,71 @@
 import { spawn } from "node:child_process";
+import fs from "node:fs";
 import os from "node:os";
+import path from "node:path";
+
+/**
+ * Trouve le binaire Claude Code sur la machine de démo.
+ * Ordre : CLAUDE_BIN, PATH, emplacements usuels, extension VS Code.
+ * Rien n'est codé en dur sur cette machine : le projet doit tourner ailleurs.
+ */
+export function resolveClaudeBin(): string {
+  const home = os.homedir();
+  const explicit = process.env.CLAUDE_BIN?.trim();
+  if (explicit) return explicit;
+
+  const candidates = [
+    path.join(home, ".local/bin/claude"),
+    path.join(home, ".claude/local/claude"),
+    path.join(home, ".npm-global/bin/claude"),
+    path.join(home, "bin/claude"),
+    "/opt/homebrew/bin/claude",
+    "/usr/local/bin/claude",
+  ];
+
+  for (const dir of (process.env.PATH ?? "").split(path.delimiter)) {
+    if (dir) candidates.push(path.join(dir, "claude"));
+  }
+
+  for (const root of [
+    path.join(home, ".vscode/extensions"),
+    path.join(home, ".vscode-server/extensions"),
+  ]) {
+    if (!fs.existsSync(/*turbopackIgnore: true*/ root)) continue;
+    try {
+      const extensions = fs
+        .readdirSync(/*turbopackIgnore: true*/ root)
+        .filter((name) => name.startsWith("anthropic.claude-code-"))
+        .sort((a, b) => b.localeCompare(a, undefined, { numeric: true }));
+      for (const extension of extensions) {
+        candidates.push(
+          path.join(
+            root,
+            extension,
+            "resources",
+            "native-binary",
+            process.platform === "win32" ? "claude.exe" : "claude",
+          ),
+        );
+      }
+    } catch {
+      // dossier illisible : on continue avec les autres candidats.
+    }
+  }
+
+  return (
+    candidates.find((candidate) => fs.existsSync(/*turbopackIgnore: true*/ candidate)) ??
+    "claude"
+  );
+}
+
+export function claudeBinInfo(): { path: string; found: boolean } {
+  const bin = resolveClaudeBin();
+  return {
+    path: bin,
+    found:
+      bin === "claude" ? false : fs.existsSync(/*turbopackIgnore: true*/ bin),
+  };
+}
 
 /**
  * Appelle `claude -p` (Claude Code en mode non interactif) avec
@@ -48,7 +114,7 @@ export async function runClaudeCli({
   const stdout = await new Promise<string>((resolve, reject) => {
     // turbopackIgnore : sans ça, Next trace tout le projet (dump ROME de 88 Mo
     // compris) dans la fonction serveur, ce qui peut casser le déploiement Vercel.
-    const child = spawn(/*turbopackIgnore: true*/ process.env.CLAUDE_BIN || "claude", args, {
+    const child = spawn(/*turbopackIgnore: true*/ resolveClaudeBin(), args, {
       cwd: os.tmpdir(),
       stdio: ["pipe", "pipe", "pipe"],
     });

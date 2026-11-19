@@ -1,0 +1,415 @@
+{
+  "responses": [
+    {
+      "cardId": "reparer-velo",
+      "direction": "right",
+      "reason": "deja-souvent",
+      "ts": 1795096928764,
+      "latencyMs": 3372
+    },
+    {
+      "cardId": "gen-creuser-300182-reparer-velo",
+      "direction": "right",
+      "ts": 1795096935071,
+      "latencyMs": 3361
+    },
+    {
+      "cardId": "baby-sitting",
+      "direction": "left",
+      "reason": "pas-mon-truc",
+      "ts": 1795096943835,
+      "latencyMs": 3372
+    },
+    {
+      "cardId": "bricoler",
+      "direction": "right",
+      "reason": "deja-une-fois",
+      "ts": 1795096951011,
+      "latencyMs": 2848
+    },
+    {
+      "cardId": "gen-explorer-300260",
+      "direction": "right",
+      "reason": "jamais-fait-mais-tente",
+      "ts": 1795096957554,
+      "latencyMs": 4289
+    },
+    {
+      "cardId": "theatre",
+      "direction": "left",
+      "reason": "pas-mon-truc",
+      "ts": 1795096964333,
+      "latencyMs": 2717
+    },
+    {
+      "cardId": "reparer-pc",
+      "direction": "right",
+      "reason": "deja-souvent",
+      "ts": 1795096972303,
+      "latencyMs": 3110
+    },
+    {
+      "cardId": "gen-creuser-300178-reparer-pc",
+      "direction": "right",
+      "ts": 1795096977816,
+      "latencyMs": 3099
+    },
+    {
+      "cardId": "monter-meuble",
+      "direction": "right",
+      "reason": "deja-une-fois",
+      "ts": 1795096981977,
+      "latencyMs": 3503
+    },
+    {
+      "cardId": "gen-creuser-300135-monter-meuble",
+      "direction": "right",
+      "ts": 1795096988681,
+      "latencyMs": 3492
+    },
+    {
+      "cardId": "vendre-vinted",
+      "direction": "left",
+      "reason": "pas-mon-truc",
+      "ts": 1795096992842,
+      "latencyMs": 3503
+    },
+    {
+      "cardId": "installer-reseau",
+      "direction": "right",
+      "reason": "jamais-fait-mais-tente",
+      "ts": 1795096998194,
+      "latencyMs": 3896
+    },
+    {
+      "cardId": "gen-explorer-300228",
+      "direction": "right",
+      "reason": "jamais-fait-mais-tente",
+      "ts": 1795097004737,
+      "latencyMs": 4289
+    },
+    {
+      "cardId": "conduire-camion",
+      "direction": "left",
+      "reason": "pas-les-moyens",
+      "ts": 1795097009692,
+      "latencyMs": 3765
+    },
+    {
+      "cardId": "potager",
+      "direction": "right",
+      "reason": "deja-une-fois",
+      "ts": 1795097016471,
+      "latencyMs": 2717
+    },
+    {
+      "cardId": "gen-creuser-300294-potager",
+      "direction": "right",
+      "ts": 1795097020793,
+      "latencyMs": 2706
+    },
+    {
+      "cardId": "aider-personne-agee",
+      "direction": "left",
+      "reason": "pas-mon-truc",
+      "ts": 1795097027336,
+      "latencyMs": 4289
+    },
+    {
+      "cardId": "robot",
+      "direction": "right",
+      "reason": "jamais-fait-mais-tente",
+      "ts": 1795097033321,
+      "latencyMs": 2455
+    },
+    {
+      "cardId": "accueillir-evenement",
+      "direction": "left",
+      "reason": "pas-mon-truc",
+      "ts": 1795097040261,
+      "latencyMs": 1920
+    },
+    {
+      "cardId": "planning",
+      "direction": "right",
+      "reason": "deja-une-fois",
+      "ts": 1795097047437,
+      "latencyMs": 2848
+    },
+    {
+      "cardId": "gen-creuser-300464-planning",
+      "direction": "left",
+      "ts": 1795097052156,
+      "latencyMs": 2837
+    },
+    {
+      "cardId": "peindre-mur",
+      "direction": "right",
+      "reason": "deja-souvent",
+      "ts": 1795097060523,
+      "latencyMs": 3241
+    },
+    {
+      "cardId": "caisse-asso",
+      "direction": "left",
+      "reason": "jamais-essaye",
+      "ts": 1795097068890,
+      "latencyMs": 3241
+    },
+    {
+      "cardId": "demonter-telephone",
+      "direction": "right",
+      "reason": "deja-souvent",
+      "ts": 1795097075036,
+      "latencyMs": 4158
+    }
+  ],
+  "generated": [
+    {
+      "id": "gen-creuser-300182-reparer-velo",
+      "text": "Et c'est toi qui trouvais d'où venait la panne ?",
+      "hint": "Chaîne, freins, dérailleur…",
+      "emoji": "🔧",
+      "centers": {
+        "manual": 0.63,
+        "creation": 0.38
+      },
+      "tags": [
+        "adaptatif",
+        "creuser"
+      ],
+      "source": "generated",
+      "target": {
+        "mode": "creuser",
+        "macro": 300182,
+        "label": "Réparer un équipement, une machine, une installation",
+        "center": "manual",
+        "parentId": "reparer-velo"
+      }
+    },
+    {
+      "id": "gen-explorer-300260",
+      "text": "Tenir le stock d'une épicerie solidaire",
+      "hint": "Compter, ranger, prévoir ce qui manque",
+      "emoji": "📦",
+      "centers": {
+        "leadership": 0.5,
+        "manual": 0.5
+      },
+      "tags": [
+        "adaptatif",
+        "explorer"
+      ],
+      "source": "generated",
+      "target": {
+        "mode": "explorer",
+        "macro": 300260,
+        "label": "Gérer les stocks",
+        "center": "leadership"
+      }
+    },
+    {
+      "id": "gen-creuser-300178-reparer-pc",
+      "text": "Et tu reprenais ce qui clochait jusqu'à ce que ça redémarre ?",
+      "hint": "Même si ça prenait toute l'aprem",
+      "emoji": "💻",
+      "centers": {
+        "tech": 0.4,
+        "manual": 0.39,
+        "backstage": 0.21
+      },
+      "tags": [
+        "adaptatif",
+        "creuser"
+      ],
+      "source": "generated",
+      "target": {
+        "mode": "creuser",
+        "macro": 300178,
+        "label": "Réaliser des corrections ou réparations sur un ouvrage",
+        "center": "tech",
+        "parentId": "reparer-pc"
+      }
+    },
+    {
+      "id": "gen-creuser-300135-monter-meuble",
+      "text": "Et c'est toi qui réglais tout pour que ça tienne bien droit ?",
+      "hint": "Portes, tiroirs, niveaux",
+      "emoji": "🪛",
+      "centers": {
+        "manual": 0.66,
+        "organize": 0.15,
+        "nature": 0.19
+      },
+      "tags": [
+        "adaptatif",
+        "creuser"
+      ],
+      "source": "generated",
+      "target": {
+        "mode": "creuser",
+        "macro": 300135,
+        "label": "Monter et régler une installation, une machine",
+        "center": "manual",
+        "parentId": "monter-meuble"
+      }
+    },
+    {
+      "id": "gen-explorer-300228",
+      "text": "Poser des étagères dans un local d'asso",
+      "hint": "Perceuse, chevilles, niveau",
+      "emoji": "🧰",
+      "centers": {
+        "manual": 0.7,
+        "creation": 0.18,
+        "physical": 0.13
+      },
+      "tags": [
+        "adaptatif",
+        "explorer"
+      ],
+      "source": "generated",
+      "target": {
+        "mode": "explorer",
+        "macro": 300228,
+        "label": "Fixer, poser, installer des éléments, des ouvrages",
+        "center": "manual"
+      }
+    },
+    {
+      "id": "gen-creuser-300294-potager",
+      "text": "Et c'est toi qui t'occupais de la récolte ?",
+      "hint": "Savoir quand c'est prêt",
+      "emoji": "🥕",
+      "centers": {
+        "nature": 0.61,
+        "manual": 0.26,
+        "physical": 0.14
+      },
+      "tags": [
+        "adaptatif",
+        "creuser"
+      ],
+      "source": "generated",
+      "target": {
+        "mode": "creuser",
+        "macro": 300294,
+        "label": "Cultiver et récolter des végétaux/minéraux",
+        "center": "nature",
+        "parentId": "potager"
+      }
+    },
+    {
+      "id": "gen-creuser-300464-planning",
+      "text": "Et c'est toi qui gérais quand quelqu'un se désistait ?",
+      "hint": "Trouver un remplaçant au dernier moment",
+      "emoji": "📅",
+      "centers": {
+        "organize": 0.4,
+        "detail": 0.1,
+        "leadership": 0.5
+      },
+      "tags": [
+        "adaptatif",
+        "creuser"
+      ],
+      "source": "generated",
+      "target": {
+        "mode": "creuser",
+        "macro": 300464,
+        "label": "Gérer un planning",
+        "center": "organize",
+        "parentId": "planning"
+      }
+    }
+  ],
+  "traitResponses": [
+    {
+      "pairId": "social-1",
+      "direction": "left",
+      "ts": 0
+    },
+    {
+      "pairId": "social-2",
+      "direction": "right",
+      "ts": 1
+    },
+    {
+      "pairId": "social-3",
+      "direction": "right",
+      "ts": 2
+    },
+    {
+      "pairId": "structure-1",
+      "direction": "left",
+      "ts": 3
+    },
+    {
+      "pairId": "structure-2",
+      "direction": "right",
+      "ts": 4
+    },
+    {
+      "pairId": "structure-3",
+      "direction": "left",
+      "ts": 5
+    },
+    {
+      "pairId": "openness-1",
+      "direction": "left",
+      "ts": 6
+    },
+    {
+      "pairId": "openness-2",
+      "direction": "right",
+      "ts": 7
+    },
+    {
+      "pairId": "openness-3",
+      "direction": "left",
+      "ts": 8
+    },
+    {
+      "pairId": "cooperation-1",
+      "direction": "right",
+      "ts": 9
+    },
+    {
+      "pairId": "cooperation-2",
+      "direction": "right",
+      "ts": 10
+    },
+    {
+      "pairId": "cooperation-3",
+      "direction": "left",
+      "ts": 11
+    },
+    {
+      "pairId": "pace-1",
+      "direction": "right",
+      "ts": 12
+    },
+    {
+      "pairId": "pace-2",
+      "direction": "right",
+      "ts": 13
+    },
+    {
+      "pairId": "pace-3",
+      "direction": "left",
+      "ts": 14
+    }
+  ],
+  "confirmations": [
+    {
+      "centerId": "manual",
+      "accepted": true,
+      "ts": 1795097015036
+    },
+    {
+      "centerId": "care",
+      "accepted": false,
+      "ts": 1795097045036
+    }
+  ]
+}

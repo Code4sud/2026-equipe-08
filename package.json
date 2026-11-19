@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "import:rome": "node scripts/import-rome.mjs",
     "build:skills": "node scripts/build-skills.mjs",
-    "pregen:cards": "tsx scripts/pregen-cards.ts"
+    "pregen:cards": "tsx scripts/pregen-cards.ts",
+    "claude": "bash scripts/claude.sh"
   },
   "dependencies": {
     "framer-motion": "^14.14.0",

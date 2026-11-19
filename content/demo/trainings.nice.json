@@ -1,0 +1,301 @@
+[
+  {
+    "id": "tr-cap-metallier",
+    "title": "CAP Métallier",
+    "diplomaLevel": "CAP",
+    "durationMonths": 24,
+    "alternance": true,
+    "prerequisites": ["Aucun diplôme requis", "Goût pour le travail manuel"],
+    "cost": "Gratuit en alternance",
+    "jobCodes": ["H2911", "H2905"],
+    "centers": ["manual"],
+    "establishments": [
+      {
+        "name": "Lycée professionnel Les Eucalyptus",
+        "city": "Nice",
+        "url": "https://www.onisep.fr/recherche?q=CAP+metallier+Nice",
+        "source": "demo"
+      },
+      {
+        "name": "CFA de la Côte d'Azur",
+        "city": "Nice",
+        "url": "https://www.onisep.fr/recherche?q=CFA+metallier+Nice",
+        "source": "demo"
+      }
+    ],
+    "debouches": [
+      { "code": "H2911", "label": "Métallier / Métallière" },
+      { "code": "H2905", "label": "Cisailleur / Cisailleuse en métallurgie" }
+    ],
+    "nextStep": "Contacter le CFA et demander une immersion d'une journée.",
+    "source": "demo"
+  },
+  {
+    "id": "tr-bac-chaudronnerie",
+    "title": "Bac pro Technicien en chaudronnerie industrielle",
+    "diplomaLevel": "Bac pro",
+    "durationMonths": 36,
+    "alternance": true,
+    "prerequisites": ["Niveau 3e", "Intérêt pour la fabrication et la lecture de plans"],
+    "cost": "Gratuit en alternance",
+    "jobCodes": ["H2911", "H3203"],
+    "centers": ["manual", "creation"],
+    "establishments": [
+      {
+        "name": "Lycée professionnel Les Eucalyptus",
+        "city": "Nice",
+        "url": "https://www.onisep.fr/recherche?q=Bac+pro+chaudronnerie+Nice",
+        "source": "demo"
+      }
+    ],
+    "debouches": [
+      { "code": "H2911", "label": "Métallier / Métallière" },
+      { "code": "H3203", "label": "Mouleur-stratifieur / Mouleuse-stratifieuse" }
+    ],
+    "nextStep": "Demander les journées portes ouvertes du lycée.",
+    "source": "demo"
+  },
+  {
+    "id": "tr-cap-production",
+    "title": "CAP Conducteur d'installations de production",
+    "diplomaLevel": "CAP",
+    "durationMonths": 24,
+    "alternance": true,
+    "prerequisites": ["Aucun diplôme requis", "Rythme régulier accepté"],
+    "cost": "Gratuit en alternance",
+    "jobCodes": ["H3302", "H2304"],
+    "centers": ["manual"],
+    "establishments": [
+      {
+        "name": "Lycée professionnel Magnan",
+        "city": "Nice",
+        "url": "https://www.onisep.fr/recherche?q=CAP+conducteur+installation+production+Nice",
+        "source": "demo"
+      },
+      {
+        "name": "CFA de la Côte d'Azur",
+        "city": "Nice",
+        "url": "https://www.onisep.fr/recherche?q=CFA+production+Nice",
+        "source": "demo"
+      }
+    ],
+    "debouches": [
+      { "code": "H3302", "label": "Agent / Agente de conditionnement" },
+      { "code": "H2304", "label": "Opérateur / Opératrice de fabrication des industries chimiques" }
+    ],
+    "nextStep": "Demander une période d'observation en entreprise avant l'inscription.",
+    "source": "demo"
+  },
+  {
+    "id": "tr-cap-plasturgie",
+    "title": "CAP Plasturgie et composites",
+    "diplomaLevel": "CAP",
+    "durationMonths": 24,
+    "alternance": true,
+    "prerequisites": ["Aucun diplôme requis", "Attention et précision"],
+    "cost": "Gratuit en alternance",
+    "jobCodes": ["H3203"],
+    "centers": ["manual", "creation"],
+    "establishments": [
+      {
+        "name": "Lycée professionnel Les Eucalyptus",
+        "city": "Nice",
+        "url": "https://www.onisep.fr/recherche?q=CAP+plasturgie+Nice",
+        "source": "demo"
+      }
+    ],
+    "debouches": [
+      { "code": "H3203", "label": "Mouleur-stratifieur / Mouleuse-stratifieuse" }
+    ],
+    "nextStep": "Visiter un atelier de composites et parler à un professionnel.",
+    "source": "demo"
+  },
+  {
+    "id": "tr-bac-sn",
+    "title": "Bac pro Systèmes numériques",
+    "diplomaLevel": "Bac pro",
+    "durationMonths": 36,
+    "alternance": true,
+    "prerequisites": ["Niveau 3e", "Intérêt pour l'informatique et les réseaux"],
+    "cost": "Gratuit en alternance",
+    "jobCodes": ["I1209", "I1409"],
+    "centers": ["tech"],
+    "establishments": [
+      {
+        "name": "Lycée technique René Cassin",
+        "city": "Nice",
+        "url": "https://www.onisep.fr/recherche?q=Bac+pro+systemes+numeriques+Nice",
+        "source": "demo"
+      },
+      {
+        "name": "CFA de la Côte d'Azur",
+        "city": "Nice",
+        "url": "https://www.onisep.fr/recherche?q=CFA+systemes+numeriques+Nice",
+        "source": "demo"
+      }
+    ],
+    "debouches": [
+      { "code": "I1209", "label": "Technicien / Technicienne d'installation de panneau digital" },
+      { "code": "I1409", "label": "Agent / Agente de maintenance en bureautique" }
+    ],
+    "nextStep": "Demander une immersion en entreprise via la mission locale.",
+    "source": "demo"
+  },
+  {
+    "id": "tr-bts-sio",
+    "title": "BTS Services informatiques aux organisations",
+    "diplomaLevel": "Bac +2",
+    "durationMonths": 24,
+    "alternance": true,
+    "prerequisites": ["Bac général, technologique ou professionnel", "Logique et autonomie"],
+    "cost": "Gratuit en alternance",
+    "jobCodes": ["M1810", "M1834"],
+    "centers": ["tech", "organize"],
+    "establishments": [
+      {
+        "name": "Lycée technique René Cassin",
+        "city": "Nice",
+        "url": "https://www.onisep.fr/recherche?q=BTS+SIO+Nice",
+        "source": "demo"
+      },
+      {
+        "name": "IUT Nice Côte d'Azur",
+        "city": "Nice",
+        "url": "https://www.onisep.fr/recherche?q=BUT+informatique+Nice",
+        "source": "demo"
+      }
+    ],
+    "debouches": [
+      { "code": "M1810", "label": "Technicien / Technicienne d'exploitation informatique" },
+      { "code": "M1834", "label": "Administrateur / Administratrice de site internet" }
+    ],
+    "nextStep": "Préparer un dossier Parcoursup et demander une alternance.",
+    "source": "demo"
+  },
+  {
+    "id": "tr-bts-elec",
+    "title": "BTS Électrotechnique",
+    "diplomaLevel": "Bac +2",
+    "durationMonths": 24,
+    "alternance": true,
+    "prerequisites": ["Bac pro ou général", "Intérêt pour les installations et le terrain"],
+    "cost": "Gratuit en alternance",
+    "jobCodes": ["I1209"],
+    "centers": ["tech", "manual"],
+    "establishments": [
+      {
+        "name": "Lycée technique René Cassin",
+        "city": "Nice",
+        "url": "https://www.onisep.fr/recherche?q=BTS+electrotechnique+Nice",
+        "source": "demo"
+      }
+    ],
+    "debouches": [
+      { "code": "I1209", "label": "Technicien / Technicienne d'installation de panneau digital" }
+    ],
+    "nextStep": "Identifier une entreprise d'accueil pour l'alternance.",
+    "source": "demo"
+  },
+  {
+    "id": "tr-cap-maroquinerie",
+    "title": "CAP Maroquinerie",
+    "diplomaLevel": "CAP",
+    "durationMonths": 24,
+    "alternance": true,
+    "prerequisites": ["Aucun diplôme requis", "Minutie et goût du détail"],
+    "cost": "Gratuit en alternance",
+    "jobCodes": ["H1240"],
+    "centers": ["creation", "detail"],
+    "establishments": [
+      {
+        "name": "Lycée professionnel Les Eucalyptus",
+        "city": "Nice",
+        "url": "https://www.onisep.fr/recherche?q=CAP+maroquinerie+Nice",
+        "source": "demo"
+      },
+      {
+        "name": "CFA des métiers du cuir",
+        "city": "Nice",
+        "url": "https://www.onisep.fr/recherche?q=CFA+maroquinerie+Nice",
+        "source": "demo"
+      }
+    ],
+    "debouches": [
+      { "code": "H1240", "label": "Agent / Agente de finissage couleurs et effets cuirs et peaux" }
+    ],
+    "nextStep": "Demander un stage d'observation dans un atelier de maroquinerie.",
+    "source": "demo"
+  },
+  {
+    "id": "tr-cap-carreleur",
+    "title": "CAP Carreleur-mosaïste",
+    "diplomaLevel": "CAP",
+    "durationMonths": 24,
+    "alternance": true,
+    "prerequisites": ["Aucun diplôme requis", "Goût du chantier et de la précision"],
+    "cost": "Gratuit en alternance",
+    "jobCodes": ["F1608"],
+    "centers": ["creation", "manual"],
+    "establishments": [
+      {
+        "name": "CFA du BTP Côte d'Azur",
+        "city": "Nice",
+        "url": "https://www.onisep.fr/recherche?q=CAP+carreleur+Nice",
+        "source": "demo"
+      }
+    ],
+    "debouches": [
+      { "code": "F1608", "label": "Carreleur / Carreleuse" }
+    ],
+    "nextStep": "Faire une journée d'immersion sur un chantier.",
+    "source": "demo"
+  },
+  {
+    "id": "tr-cap-beton",
+    "title": "CAP Constructeur en béton armé",
+    "diplomaLevel": "CAP",
+    "durationMonths": 24,
+    "alternance": true,
+    "prerequisites": ["Aucun diplôme requis", "Aptitude au travail en extérieur"],
+    "cost": "Gratuit en alternance",
+    "jobCodes": ["F1706"],
+    "centers": ["creation", "manual"],
+    "establishments": [
+      {
+        "name": "CFA du BTP Côte d'Azur",
+        "city": "Nice",
+        "url": "https://www.onisep.fr/recherche?q=CAP+constructeur+beton+arme+Nice",
+        "source": "demo"
+      }
+    ],
+    "debouches": [
+      { "code": "F1706", "label": "Agent / Agente de préfabrication de l'industrie du béton" }
+    ],
+    "nextStep": "Contacter une entreprise de préfabrication pour une immersion.",
+    "source": "demo"
+  },
+  {
+    "id": "tr-bac-tp",
+    "title": "Bac pro Travaux publics",
+    "diplomaLevel": "Bac pro",
+    "durationMonths": 36,
+    "alternance": true,
+    "prerequisites": ["Niveau 3e", "Goût du terrain et du travail en équipe"],
+    "cost": "Gratuit en alternance",
+    "jobCodes": ["F1505"],
+    "centers": ["creation", "manual"],
+    "establishments": [
+      {
+        "name": "CFA du BTP Côte d'Azur",
+        "city": "Nice",
+        "url": "https://www.onisep.fr/recherche?q=Bac+pro+travaux+publics+Nice",
+        "source": "demo"
+      }
+    ],
+    "debouches": [
+      { "code": "F1505", "label": "Échafaudeur / Échafaudeuse" }
+    ],
+    "nextStep": "Demander les conditions d'alternance au CFA.",
+    "source": "demo"
+  }
+]

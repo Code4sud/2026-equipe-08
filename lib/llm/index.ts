@@ -30,21 +30,38 @@ export type CompleteJsonOptions<T> = {
 
 export type Backend = "mock" | "cli" | "api";
 
-export const DEFAULT_MODEL = "claude-opus-5-5";
+/** Sonnet est un alias stable du CLI ; surchargez avec LLM_MODEL si besoin. */
+export const DEFAULT_MODEL = "sonnet";
 
 export function llmBackend(): Backend {
   const value = process.env.LLM_BACKEND;
   return value === "cli" || value === "api" ? value : "mock";
 }
 
-export async function completeJson<T>(opts: CompleteJsonOptions<T>): Promise<T | null> {
+export type CompleteJsonResult<T> = {
+  data: T | null;
+  backend: Backend;
+  error?: string;
+};
+
+/**
+ * Version détaillée : le mode démo peut afficher pourquoi l'IA n'a pas répondu
+ * (mock, CLI absent, session OAuth expirée, sortie hors schéma).
+ */
+export async function completeJsonDetailed<T>(
+  opts: CompleteJsonOptions<T>,
+): Promise<CompleteJsonResult<T>> {
   const backend = llmBackend();
-  if (backend === "mock") return null;
+  if (backend === "mock") {
+    return { data: null, backend, error: "LLM_BACKEND=mock" };
+  }
 
   if (backend === "api") {
-    // TODO(P1) : brancher @anthropic-ai/sdk ici (même signature).
-    console.warn("[llm] backend 'api' pas encore branché, repli sans LLM");
-    return null;
+    return {
+      data: null,
+      backend,
+      error: "backend 'api' non branché (utiliser LLM_BACKEND=cli en local)",
+    };
   }
 
   try {
@@ -58,12 +75,27 @@ export async function completeJson<T>(opts: CompleteJsonOptions<T>): Promise<T |
     });
     const parsed = opts.schema.safeParse(raw);
     if (!parsed.success) {
-      console.warn("[llm] sortie hors schéma", parsed.error.issues.slice(0, 3));
-      return null;
+      return {
+        data: null,
+        backend,
+        error: `sortie hors schéma : ${parsed.error.issues
+          .slice(0, 3)
+          .map((issue) => issue.message)
+          .join(", ")}`,
+      };
     }
-    return parsed.data;
+    return { data: parsed.data, backend };
   } catch (error) {
-    console.warn("[llm] échec", error instanceof Error ? error.message : error);
-    return null;
+    return {
+      data: null,
+      backend,
+      error: error instanceof Error ? error.message : String(error),
+    };
   }
+}
+
+export async function completeJson<T>(
+  opts: CompleteJsonOptions<T>,
+): Promise<T | null> {
+  return (await completeJsonDetailed(opts)).data;
 }

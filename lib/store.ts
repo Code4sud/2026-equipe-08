@@ -19,6 +19,13 @@ import type {
 
 export type LastResponse = { kind: "card" | "pair"; index: number } | null;
 
+export type SessionSnapshot = {
+  responses: Response[];
+  generated: Card[];
+  traitResponses: TraitResponse[];
+  confirmations: Confirmation[];
+};
+
 type SessionState = {
   responses: Response[];
   traitResponses: TraitResponse[];
@@ -60,6 +67,8 @@ type SessionState = {
   swipePair: (direction: SwipeDirection, latencyMs?: number) => void;
   startStyle: () => void;
   reset: () => void;
+  /** Charge une session existante (ex. le persona de démonstration). */
+  loadSession: (session: SessionSnapshot) => void;
   getProfile: () => Profile;
   /** Toutes les cartes connues : banque fixe + générées. */
   allCards: () => Card[];
@@ -180,6 +189,15 @@ export const useSession = create<SessionState>()(
       ...initialState,
 
       getProfile: () => deriveProfile(get()),
+
+      loadSession: (session) => {
+        set({
+          ...initialState,
+          ...session,
+          currentCardId: null,
+          startedAt: Date.now(),
+        });
+      },
 
       allCards: () => [...CARDS, ...get().generated],
 
