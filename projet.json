@@ -1,6 +1,6 @@
 {
-  "nom": "Declic",
-  "pitch": "En préparation",
+  "nom": "Orientis",
+  "pitch": "Work in Progress",
   "description": "",
   "ecoles": ["AIVANCITY", "42 Nice"],
   "stack": ["Claude", "nextjs"],
