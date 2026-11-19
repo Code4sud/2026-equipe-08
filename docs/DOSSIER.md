@@ -369,6 +369,49 @@ type Narrative = {
 
 ---
 
+## 6 bis. Ressources du Centre et open data — ce qu'on peut utiliser
+
+### Matrice d'usage
+
+| Ressource | Usage | Où dans le dossier | Conditions |
+|---|---|---|---|
+| **18 Rapports des Possibles** | Recherche design : structure d'un bon rapport, ton, niveau de détail, « champ des possibles » | Modèle de `actionPlan`, `synthesis`, dossier conseiller | Interne, anonymisé mais sensible. Ne pas republier, ne pas envoyer à l'IA sans accord explicite. Citer le Centre. |
+| **Guide pratique du Centre** | Les 4 temps de la restitution, l'entretien, l'Agora, la lecture du rapport | Ordre des sections, `actionPlan`, questions conseiller | Interne ; citer. |
+| **Déroulé type de la restitution** | Les 4 temps + les préoccupations fréquentes des jeunes | Plan d'action, ton, questions à poser | Interne ; citer. |
+| **Photos Agora / Mur des Possibles** | Moodboard, couleurs, mise en page, ambiance | Design uniquement | Droits d'image ; **pas de visages** ; accord du Centre. |
+| **ROME 4.0** | Métiers, compétences, contextes, tags, arbre | Job cards, formations, débouchés, badges | Licence Ouverte ; **déjà importé v62**. |
+| **ONISEP** | Formations, établissements, métiers | `trainings`, `establishments` | Open data ; vérifier la licence ; sous-ensemble régional. |
+| **Carif-Oref** | Offre de formation régionale, alternance, financement | `trainings` | Open data ; vérifier la licence ; sous-ensemble régional. |
+| **orientation-regionsud.fr** | Liens « pour aller plus loin » | `nextStep`, sources | **Lien/citation uniquement**, pas de scraping. |
+| **Responsable du Centre** | Validation du parcours, des rapports, des questions | Recherche produit | Pas runtime ; 1–2 h/jour. |
+| **O*NET Job Zones** (XLSX joint) | Référence conceptuelle des niveaux de préparation 1–5 | Formulation des niveaux | **Pas de code ROME** dans le fichier → pas de jointure fiable. ROME `acces_metier` reste la source. |
+| **XLSX/XML ROME joints** | Même version v62 que le JSON déjà importé | Vérification, tags, arbre | Pas de ré-import nécessaire. |
+
+### Ce que les fichiers ROME apportent vraiment
+
+- **`fiches-rome-tag`** (ou le JSON `unix_referentiel_code_rome`) : `transition_eco`, `transition_num`, `transition_demo`, `emploi_reglemente`, `emploi_cadre`.
+  → badges « Métier réglementé », « Transition écologique », « Emploi cadre » et avertissement d'accès.
+- **`arboprincipale`** : 14 grands domaines / 110 domaines professionnels.
+  → libellé de domaine pour grouper les directions et les formations.
+- **`arborescence-simplifiee` / `arbocompetences`** : macros, domaines, enjeux, objectifs.
+  → déjà utilisés par `scripts/build-skills.mjs` ; pas de nouveau runtime.
+- **`RefRomeXml`** : même version que le JSON ; utile pour vérifier, pas pour remplacer.
+
+### Ce qu'on ne fait pas
+
+- **Pas d'entraînement IA sur les 18 rapports**, pas de rapports bruts dans les prompts. Anonymisé ≠ consentement pour l'IA.
+- **Pas de republication** du guide, du déroulé ou des photos.
+- **Pas de scraping** d'orientation-regionsud.fr.
+- **Pas de jointure O*NET → ROME** par titre : les intitulés sont traduits mais il n'y a pas de code ROME. Les niveaux de préparation O*NET ne remplacent pas `acces_metier`.
+
+### Ce qu'il nous faut
+
+1. **2–3 rapports anonymisés** + le **guide** + le **déroulé** déposés dans le workspace (je n'ai pas accès à Discord) → j'aligne le template du dossier et le ton.
+2. L'accord du Centre pour utiliser les photos comme **moodboard** (pas comme assets avec visages).
+3. Les **questions à poser à la responsable** : qu'est-ce qui rend un rapport utile ? Quels sont les 4 temps ? Quelles sont les 5 préoccupations les plus fréquentes ? Qu'est-ce que le Mur des Possibles change dans l'entretien ?
+
+---
+
 ## 7. CV
 
 - **Template** rempli avec : prénom (optionnel), ville, titre, résumé (IA ou déterministe), expériences, compétences validées, formations, langues/centres d'intérêt (optionnels), disponibilité.
