@@ -19,6 +19,8 @@ import { getMacro, poolFor, swipeTargets, type Macro } from "./skills";
 export const MAX_CREUSER = 6;
 /** Taille de la short-list de compétences proposée au LLM en mode creuser. */
 const CREUSER_CANDIDATES = 8;
+/** Compétences proposées au LLM en mode explorer (même centre d'intérêt). */
+const EXPLORER_CANDIDATES = 3;
 
 const LIVED: SwipeReason[] = ["deja-souvent", "deja-une-fois"];
 const NOT_A_REJECTION: SwipeReason[] = [
@@ -50,7 +52,18 @@ export type Coverage = {
   creuserCount: number;
 };
 
-export function statusOf(response: Response): Exclude<MacroStatus, "en-attente"> {
+/**
+ * Une carte "creuser" pose une question de VÉCU ("c'est toi qui… ?") :
+ * oui = vécu, non = pas vécu (ni rejet, ni intérêt). Les autres cartes
+ * posent une question d'INTÉRÊT ("ça te tente ?"), précisée par "déjà fait".
+ */
+export function statusOf(
+  response: Response,
+  card?: Card,
+): Exclude<MacroStatus, "en-attente"> {
+  if (card?.target?.mode === "creuser") {
+    return response.direction === "right" ? "vecu" : "inconnu";
+  }
   if (response.direction === "right") {
     return response.reason && LIVED.includes(response.reason) ? "vecu" : "attire";
   }
@@ -81,10 +94,16 @@ export function coverage(responses: Response[], cards: Card[]): Coverage {
   for (const response of responses) {
     const card = cardById.get(response.cardId);
     if (!card) continue;
-    if (card.target) macros.set(card.target.macro, statusOf(response));
-
-    const lived = statusOf(response) === "vecu";
+    const status = statusOf(response, card);
     const isCreuser = card.target?.mode === "creuser";
+    if (card.target) {
+      // Un "non" sur une carte creuser ne dégrade pas ce que la carte parente a appris.
+      const previous = macros.get(card.target.macro);
+      const keepPrevious = isCreuser && status === "inconnu" && previous && previous !== "en-attente";
+      if (!keepPrevious) macros.set(card.target.macro, status);
+    }
+
+    const lived = status === "vecu";
     if (lived && !isCreuser && !creused.has(card.id)) aCreuser.unshift(card);
   }
 
@@ -108,8 +127,9 @@ export type TargetPlan = {
   focus?: string;
   parent?: Card;
   /**
-   * Short-list sans lien lexical avec la carte parente : seul un LLM peut y
-   * trouver la bonne compétence. Sans LLM, ce plan est abandonné.
+   * Plan qui n'a de sens qu'avec un LLM : short-list sans lien lexical avec
+   * la carte parente, ou suite précise d'une carte générée. Sans LLM, il est
+   * abandonné au profit d'une exploration.
    */
   loose?: boolean;
 };
@@ -155,12 +175,15 @@ function creuserPlan(
       cards.map((c) => c.target?.focus).filter((f): f is string => Boolean(f)),
     );
     const focus = macro.children.find((c) => !usedFocus.has(c.label))?.label;
+    // Sans LLM, la "suite" serait un libellé ROME brut : on n'en propose pas.
+    if (!allowLoose) return null;
     return {
       mode: "creuser",
       center: parent.target.center,
       candidates: [macro],
       focus,
       parent,
+      loose: true,
     };
   }
 
@@ -285,13 +308,24 @@ function explorerPlan(
     const unseen = poolFor(center).filter((m) => !cov.macros.has(m.code));
     if (unseen.length === 0) continue;
 
-    // Diversité : parmi les 8 meilleures, l'enjeu ROME le moins vu gagne.
-    const head = unseen.slice(0, 8);
-    let best = head[0];
+    // Diversité : parmi les 8 meilleures, les enjeux ROME les moins vus d'abord
+    // (tri stable : à égalité, l'ordre du vivier). On en propose 3 au LLM,
+    // qui choisit celle qui prolonge le mieux ce que le jeune a aimé.
+    const head = unseen
+      .slice(0, 8)
+      .map((m, i) => ({ m, i, seen: cov.enjeux.get(m.enjeu) ?? 0 }))
+      .sort((a, b) => a.seen - b.seen || a.i - b.i)
+      .map((x) => x.m);
+    const candidates: Macro[] = [];
     for (const m of head) {
-      if ((cov.enjeux.get(m.enjeu) ?? 0) < (cov.enjeux.get(best.enjeu) ?? 0)) best = m;
+      if (candidates.length >= EXPLORER_CANDIDATES) break;
+      if (!candidates.some((c) => c.enjeu === m.enjeu)) candidates.push(m);
     }
-    return { mode: "explorer", center, candidates: [best] };
+    for (const m of head) {
+      if (candidates.length >= EXPLORER_CANDIDATES) break;
+      if (!candidates.includes(m)) candidates.push(m);
+    }
+    return { mode: "explorer", center, candidates };
   }
 
   return null;

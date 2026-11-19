@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { CARDS } from "../../content/cards";
-import { computeProfile } from "../score";
+import { applyResponse, computeProfile, createProfile } from "../score";
 import type { Card, Response } from "../types";
 import { getMacro, isSwipeTarget, poolFor } from "./skills";
 import { buildCard, cardCenters, coverage, pickTarget, statusOf } from "./target";
-import { templateDraft } from "./writer";
+import { pregenCard, pregenCount } from "./pregen";
+import { buildCardPrompt, matchesMode, templateDraft } from "./writer";
 
 function mulberry32(seed: number) {
   return function () {
@@ -161,3 +162,100 @@ describe("construction de la carte", () => {
     expect(card.target).toMatchObject({ mode: "creuser", macro: 118069, label: "Gérer une caisse", parentId: "caisse-asso" });
   });
 });
+
+describe("intérêt et vécu ne se mélangent pas", () => {
+  const macro = getMacro(118069)!; // Gérer une caisse
+  const parent = CARDS.find((c) => c.id === "caisse-asso")!;
+  const creuser = buildCard(
+    { mode: "creuser", center: "numbers", candidates: [macro], parent },
+    macro,
+    { text: "Et c'est toi qui comptais la caisse à la fin ?" },
+    "generated",
+  );
+
+  it("un 'non' sur une carte creuser ne fait pas baisser l'intérêt", () => {
+    const before = createProfile();
+    const after = applyResponse(before, creuser, r(creuser.id, "left"));
+    for (const id of Object.keys(creuser.centers)) {
+      expect(after.domains[id].mean).toBe(before.domains[id].mean);
+      expect(after.domains[id].nEff).toBe(0);
+    }
+  });
+
+  it("carte creuser : oui = vécu, non = pas vécu (et ne dégrade pas la carte parente)", () => {
+    expect(statusOf(r(creuser.id, "right"), creuser)).toBe("vecu");
+    expect(statusOf(r(creuser.id, "left"), creuser)).toBe("inconnu");
+
+    const { generated, responses } = play(2, (card) =>
+      card.target!.mode === "creuser" ? r(card.id, "left") : r(card.id, "right", "deja-une-fois"),
+    );
+    const cov = coverage(responses, [...CARDS, ...generated]);
+    expect(cov.macros.get(generated[0].target!.macro)).toBe("vecu");
+  });
+
+  it("une carte explorer est une activité, pas une question de vécu", () => {
+    const explorer = { mode: "explorer" as const };
+    expect(matchesMode(explorer, { text: "Fixer les prix pour une vente de gâteaux" })).toBe(true);
+    expect(matchesMode(explorer, { text: "T'as déjà compté la caisse ?" })).toBe(false);
+    expect(matchesMode(explorer, { text: "Avoir déjà géré un stock" })).toBe(false);
+    expect(matchesMode(explorer, { text: "Et c'est toi qui comptais" })).toBe(false);
+    expect(matchesMode({ mode: "creuser" }, { text: "Et c'est toi qui comptais la caisse ?" })).toBe(true);
+  });
+});
+
+describe("explorer personnalisé", () => {
+  it("propose jusqu'à 3 compétences du même vivier, d'enjeux variés", () => {
+    const responses = [r("reparer-velo", "right")];
+    const profile = computeProfile(responses, [], CARDS);
+    const plan = pickTarget({ profile, responses, cards: CARDS, rand: mulberry32(4) })!;
+    expect(plan.mode).toBe("explorer");
+    expect(plan.candidates.length).toBe(3);
+    expect(new Set(plan.candidates.map((m) => m.code)).size).toBe(3);
+    const pool = new Set(poolFor(plan.center).map((m) => m.code));
+    for (const m of plan.candidates) expect(pool.has(m.code)).toBe(true);
+  });
+
+  it("le prompt explorer contient ce que le jeune a aimé, jamais de texte libre", () => {
+    const responses = [r("reparer-velo", "right")];
+    const profile = computeProfile(responses, [], CARDS);
+    const plan = pickTarget({ profile, responses, cards: CARDS, rand: mulberry32(4) })!;
+    const prompt = buildCardPrompt(plan, {
+      recent: ["Réparer un vélo crevé"],
+      liked: ["Réparer un vélo crevé"],
+      disliked: ["Jouer dans une pièce de théâtre"],
+    });
+    expect(prompt).toContain("Il a dit oui à");
+    expect(prompt).toContain("Réparer un vélo crevé");
+    expect(prompt).toContain("Ça ne lui parle pas");
+    expect(prompt).toContain("prolonge le mieux ce que le jeune aime");
+  });
+});
+
+describe("cartes pré-écrites (repli sans LLM)", () => {
+  it("chaque cible du swipe a sa carte explorer pré-écrite", () => {
+    const missing = new Set<number>();
+    for (const center of new Set(CARDS.flatMap((c) => Object.keys(c.centers)))) {
+      for (const m of poolFor(center)) if (!pregenCard(m.code)) missing.add(m.code);
+    }
+    expect(missing.size).toBe(0);
+    expect(pregenCount()).toBeGreaterThan(200);
+  });
+
+  it("sans LLM, une carte explorer n'affiche jamais le libellé ROME brut", () => {
+    const responses: Response[] = [];
+    const profile = computeProfile(responses, [], CARDS);
+    const plan = pickTarget({ profile, responses, cards: CARDS, rand: mulberry32(5), allowLoose: false })!;
+    const draft = templateDraft(plan, plan.candidates[0]);
+    expect(draft.text).not.toBe(plan.candidates[0].label);
+    expect(matchesMode(plan, draft)).toBe(true);
+  });
+
+  it("sans LLM, pas de suite 'creuser' sur une carte générée (elle serait en jargon ROME)", () => {
+    const { generated, responses } = play(1, (card) => r(card.id, "right", "deja-souvent"));
+    const cards = [...CARDS, ...generated];
+    const profile = computeProfile(responses, [], cards);
+    const plan = pickTarget({ profile, responses, cards, rand: mulberry32(6), allowLoose: false })!;
+    expect(plan.mode).toBe("explorer");
+  });
+});
+

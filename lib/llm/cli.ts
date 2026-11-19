@@ -46,7 +46,9 @@ export async function runClaudeCli({
   ];
 
   const stdout = await new Promise<string>((resolve, reject) => {
-    const child = spawn(process.env.CLAUDE_BIN || "claude", args, {
+    // turbopackIgnore : sans ça, Next trace tout le projet (dump ROME de 88 Mo
+    // compris) dans la fonction serveur, ce qui peut casser le déploiement Vercel.
+    const child = spawn(/*turbopackIgnore: true*/ process.env.CLAUDE_BIN || "claude", args, {
       cwd: os.tmpdir(),
       stdio: ["pipe", "pipe", "pipe"],
     });
