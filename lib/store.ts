@@ -38,6 +38,13 @@ type SessionState = {
   fetching: boolean;
   /** Transitoire : échecs consécutifs de /api/card (coupe l'adaptatif à 3). */
   failures: number;
+  /**
+   * Après un oui sur une carte d'intérêt, on attend la réponse à
+   * « Tu l'as déjà fait ? » avant de passer à la suite.
+   */
+  awaitingExperience: boolean;
+  /** Cartes "déjà fait" pour lesquelles une carte creuser a déjà été demandée. */
+  creuserAsked: string[];
 
   ensureCard: () => void;
   ensurePair: () => void;
@@ -47,6 +54,8 @@ type SessionState = {
     latencyMs?: number,
   ) => void;
   setReason: (reason: SwipeReason) => void;
+  /** Réponse à « Tu l'as déjà fait ? » (après un oui). */
+  answerExperience: (lived: boolean) => void;
   resolvePending: (accepted: boolean) => void;
   swipePair: (direction: SwipeDirection, latencyMs?: number) => void;
   startStyle: () => void;
@@ -63,6 +72,38 @@ const ADAPTIVE_WARMUP = 2;
 /** Plafond de cartes générées par session. */
 const MAX_GENERATED = 18;
 const MAX_FAILURES = 3;
+/** Même plafond que le serveur (lib/adaptive/target.ts). */
+const MAX_CREUSER = 6;
+
+const LIVED = new Set<SwipeReason>(["deja-souvent", "deja-une-fois"]);
+
+/**
+ * Cartes "déjà fait" pas encore creusées ni demandées. Si la liste n'est pas
+ * vide, on demande une carte même si une carte explorer attend déjà en file :
+ * la carte creuser doit arriver juste après le "déjà fait".
+ */
+function creuserCandidates(state: {
+  responses: Response[];
+  generated: Card[];
+  creuserAsked: string[];
+}): string[] {
+  const creused = new Set(
+    state.generated.map((c) => c.target?.parentId).filter((id): id is string => Boolean(id)),
+  );
+  const creuserCount = state.generated.filter((c) => c.target?.mode === "creuser").length;
+  if (creuserCount >= MAX_CREUSER) return [];
+  return state.responses
+    .filter(
+      (r) =>
+        r.direction === "right" &&
+        r.reason &&
+        LIVED.has(r.reason) &&
+        !r.cardId.startsWith("gen-creuser-") &&
+        !creused.has(r.cardId) &&
+        !state.creuserAsked.includes(r.cardId),
+    )
+    .map((r) => r.cardId);
+}
 
 function deriveProfile(state: {
   responses: Response[];
@@ -100,6 +141,8 @@ const initialState = {
   queue: [] as string[],
   fetching: false,
   failures: 0,
+  awaitingExperience: false,
+  creuserAsked: [] as string[],
 };
 
 const isGenerated = (id: string) => id.startsWith("gen-");
@@ -153,10 +196,12 @@ export const useSession = create<SessionState>()(
 
       pump: async () => {
         const state = get();
+        const wantCreuser = creuserCandidates(state);
         if (
           state.fetching ||
+          state.awaitingExperience ||
           state.failures >= MAX_FAILURES ||
-          state.queue.length > 0 ||
+          (state.queue.length > 0 && wantCreuser.length === 0) ||
           state.generated.length >= MAX_GENERATED ||
           state.responses.length < ADAPTIVE_WARMUP ||
           state.responses.length >= MAX_RESPONSES
@@ -164,7 +209,7 @@ export const useSession = create<SessionState>()(
           return;
         }
 
-        set({ fetching: true });
+        set({ fetching: true, creuserAsked: [...state.creuserAsked, ...wantCreuser] });
         try {
           const res = await fetch("/api/card", {
             method: "POST",
@@ -198,9 +243,13 @@ export const useSession = create<SessionState>()(
           set({ fetching: false });
         }
 
-        // Le jeune a pu répondre pendant la requête (ex. "déjà fait") :
-        // on relance si la file s'est vidée entre-temps.
-        if (get().queue.length === 0 && get().responses.length > state.responses.length) {
+        // Le jeune a pu répondre pendant la requête : on relance si la file
+        // s'est vidée, ou si un nouveau "déjà fait" attend sa carte creuser.
+        const after = get();
+        if (
+          creuserCandidates(after).length > 0 ||
+          (after.queue.length === 0 && after.responses.length > state.responses.length)
+        ) {
           void get().pump();
         }
       },
@@ -238,6 +287,11 @@ export const useSession = create<SessionState>()(
 
         const next = pickNext(state.queue, profile, responses);
 
+        // Oui sur une carte d'intérêt : on demande « déjà fait ? » avant la suite.
+        // (Une carte creuser est déjà une question de vécu.)
+        const awaitingExperience =
+          direction === "right" && card.target?.mode !== "creuser" && !reason;
+
         set({
           responses,
           currentCardId: next.id,
@@ -245,7 +299,15 @@ export const useSession = create<SessionState>()(
           pendingConfirmation: pending,
           lastResponse: { kind: "card", index: responses.length - 1 },
           startedAt: state.startedAt ?? Date.now(),
+          awaitingExperience,
         });
+        if (!awaitingExperience) void get().pump();
+      },
+
+      answerExperience: (lived) => {
+        if (!get().awaitingExperience) return;
+        set({ awaitingExperience: false });
+        get().setReason(lived ? "deja-une-fois" : "jamais-fait-mais-tente");
         void get().pump();
       },
 
@@ -258,9 +320,7 @@ export const useSession = create<SessionState>()(
         );
         set({ responses });
         // "Déjà fait" ouvre une carte "creuser" : on la prépare tout de suite.
-        if (reason === "deja-souvent" || reason === "deja-une-fois") {
-          void get().pump();
-        }
+        if (LIVED.has(reason)) void get().pump();
       },
 
       resolvePending: (accepted) => {
@@ -333,19 +393,21 @@ export const useSession = create<SessionState>()(
     }),
     {
       name: "declic-session-v1",
-      version: 2,
+      version: 3,
       // v1 -> v2 : ajout du swipe adaptatif.
       migrate: (persisted) =>
         ({
-          ...(persisted as object),
           generated: [],
           queue: [],
+          creuserAsked: [],
+          ...(persisted as object),
         }) as unknown as SessionState,
       // Les champs transitoires ne sont jamais persistés.
       partialize: (state) => {
         const rest: Partial<SessionState> = { ...state };
         delete rest.fetching;
         delete rest.failures;
+        delete rest.awaitingExperience;
         return rest;
       },
     },

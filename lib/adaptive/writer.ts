@@ -22,6 +22,21 @@ import type { CardDraft, TargetPlan } from "./target";
 const MAX_TEXT = 120;
 const MAX_HINT = 100;
 
+/**
+ * Explorer = activité ("ça te tente ?"), jamais une question d'expérience :
+ * sinon un swipe gauche voudrait dire "jamais fait" et serait compté comme
+ * un désintérêt. Creuser = question de vécu, forme libre.
+ */
+export function matchesMode(plan: Pick<TargetPlan, "mode">, draft: CardDraft): boolean {
+  if (plan.mode === "creuser") return true;
+  const text = draft.text.replace(/[’]/g, "'").trim();
+  if (text.endsWith("?")) return false;
+  // (pas de \b après "à" : en JS, "à" n'est pas un caractère de mot)
+  if (/(^|[^\p{L}])d[ée]j[àa](?!\p{L})/iu.test(text)) return false;
+  if (/^(t'as|tu as|as-tu|t'es|tu es|est-ce|et c'est|c'est toi)\b/i.test(text)) return false;
+  return true;
+}
+
 export function isUsableDraft(draft: CardDraft): boolean {
   return draft.text.length >= 4 && draft.text.length <= MAX_TEXT && (draft.hint?.length ?? 0) <= MAX_HINT;
 }
@@ -45,11 +60,11 @@ export function templateDraft(plan: TargetPlan, macro: Macro): CardDraft {
     const text = plan.focus ?? macro.label;
     return {
       text: text.length > MAX_TEXT ? macro.label : text,
-      hint: plan.parent ? clip(`Comme pour « ${plan.parent.text} »`, MAX_HINT) : undefined,
+      hint: plan.parent ? clip(`Quand tu as fait : « ${plan.parent.text} »`, MAX_HINT) : undefined,
       emoji,
     };
   }
-  return { text: macro.label, hint: "Même juste une fois, pour toi ou pour un pote", emoji };
+  return { text: macro.label, hint: "Même si t'as jamais essayé", emoji };
 }
 
 function clip(s: string, max: number): string {
@@ -61,18 +76,20 @@ function clip(s: string, max: number): string {
 // ---------------------------------------------------------------------------
 
 /** Stable d'un appel à l'autre (cacheable côté API). */
-export const CARD_SYSTEM_PROMPT = `Tu écris les cartes de Déclic, un jeu de swipe pour des jeunes de 17 à 25 ans en décrochage, suivis en mission locale. Beaucoup pensent qu'ils ne savent "rien faire". Chaque carte décrit une situation de la vie de tous les jours ; le jeune swipe à droite si ça lui parle, à gauche sinon.
+export const CARD_SYSTEM_PROMPT = `Tu écris les cartes de Déclic, un jeu de swipe pour des jeunes de 17 à 25 ans en décrochage, suivis en mission locale. Beaucoup pensent qu'ils ne savent "rien faire". Il y a deux sortes de cartes, avec deux questions différentes affichées au-dessus :
+
+- Mode "explorer" : l'écran demande « Ça te tente ? ». La carte est UNE ACTIVITÉ à l'infinitif, qu'on peut avoir envie de faire même sans l'avoir jamais faite ("Fixer les prix pour une vente de gâteaux"). JAMAIS de question, JAMAIS "déjà" : on mesure l'envie, pas l'expérience (beaucoup n'ont jamais eu l'occasion d'essayer).
+- Mode "creuser" : l'écran demande « C'est toi ? ». Le jeune vient de dire qu'il a DÉJÀ fait la carte parente. La carte est UNE QUESTION fermée sur ce même vécu, plus précise, à laquelle on répond oui ou non ("Et c'est toi qui fixais les prix ?", "T'as déjà dû gérer un client pas content ?").
 
 On te donne une compétence du répertoire ROME (France Travail). Tu écris UNE carte qui fait reconnaître cette compétence dans une situation vécue hors travail : entre potes, au quartier, en ligne, dans une asso, au sport, dans un petit job.
 
 Règles :
-- "text" : 4 à 12 mots, verbe à l'infinitif ou question en "T'as déjà…", registre parlé, tutoiement. Pas de jargon ROME, pas d'intitulé de métier.
+- "text" : 4 à 12 mots, registre parlé, tutoiement. Pas de jargon ROME, pas d'intitulé de métier.
 - Jamais d'étiquette ("tu es manuel", "tu es organisé") : une situation concrète.
 - "hint" : facultatif, 3 à 10 mots, rassurant ("même une fois", "même sans t'en rendre compte").
 - "emoji" : un seul emoji, sans visage ni personne.
 - Interdit : la santé, le handicap, l'origine, le pays, la religion, la famille du jeune (parents, frères, sœurs), son argent, sa situation administrative, la politique, la sexualité. Pour parler d'enfants, dis "des plus petits" ou "des enfants", jamais "ton petit frère".
 - Ne répète pas une situation déjà montrée.
-- Mode "creuser" : le jeune vient de dire qu'il a DÉJÀ fait la carte parente. Pose une suite plus précise sur ce même vécu ("Et c'est toi qui…", "T'as déjà dû…").
 
 Réponds uniquement avec l'objet JSON demandé.`;
 
@@ -134,14 +151,26 @@ export async function writeCard(
     source: "template",
   };
 
-  const out = await completeJson({
-    system: CARD_SYSTEM_PROMPT,
-    prompt: buildCardPrompt(plan, recentTexts),
-    schema: draftSchema,
-    jsonSchema: draftJsonSchema,
-    effort: "low",
-  });
+  const prompt = buildCardPrompt(plan, recentTexts);
+  const ask = (extra = "") =>
+    completeJson({
+      system: CARD_SYSTEM_PROMPT,
+      prompt: prompt + extra,
+      schema: draftSchema,
+      jsonSchema: draftJsonSchema,
+      effort: "low",
+    });
+
+  let out = await ask();
   if (!out) return fallback;
+
+  // Une seule relance si une carte explorer est sortie en question de vécu.
+  if (!matchesMode(plan, { text: out.text })) {
+    out = await ask(
+      `\n\nTa proposition « ${out.text} » est une question sur le vécu. Réécris-la en ACTIVITÉ à l'infinitif, sans "déjà" ni point d'interrogation.`,
+    );
+    if (!out) return fallback;
+  }
 
   // Le LLM ne peut choisir qu'une compétence de la short-list.
   const macro =
@@ -154,7 +183,7 @@ export async function writeCard(
     hint: out.hint?.trim() || undefined,
     emoji: firstEmoji(out.emoji),
   };
-  if (!isUsableDraft(draft)) return fallback;
+  if (!isUsableDraft(draft) || !matchesMode(plan, draft)) return fallback;
 
   return { macro, draft, source: "generated" };
 }

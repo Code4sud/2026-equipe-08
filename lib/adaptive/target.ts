@@ -50,7 +50,18 @@ export type Coverage = {
   creuserCount: number;
 };
 
-export function statusOf(response: Response): Exclude<MacroStatus, "en-attente"> {
+/**
+ * Une carte "creuser" pose une question de VÉCU ("c'est toi qui… ?") :
+ * oui = vécu, non = pas vécu (ni rejet, ni intérêt). Les autres cartes
+ * posent une question d'INTÉRÊT ("ça te tente ?"), précisée par "déjà fait".
+ */
+export function statusOf(
+  response: Response,
+  card?: Card,
+): Exclude<MacroStatus, "en-attente"> {
+  if (card?.target?.mode === "creuser") {
+    return response.direction === "right" ? "vecu" : "inconnu";
+  }
   if (response.direction === "right") {
     return response.reason && LIVED.includes(response.reason) ? "vecu" : "attire";
   }
@@ -81,10 +92,16 @@ export function coverage(responses: Response[], cards: Card[]): Coverage {
   for (const response of responses) {
     const card = cardById.get(response.cardId);
     if (!card) continue;
-    if (card.target) macros.set(card.target.macro, statusOf(response));
-
-    const lived = statusOf(response) === "vecu";
+    const status = statusOf(response, card);
     const isCreuser = card.target?.mode === "creuser";
+    if (card.target) {
+      // Un "non" sur une carte creuser ne dégrade pas ce que la carte parente a appris.
+      const previous = macros.get(card.target.macro);
+      const keepPrevious = isCreuser && status === "inconnu" && previous && previous !== "en-attente";
+      if (!keepPrevious) macros.set(card.target.macro, status);
+    }
+
+    const lived = status === "vecu";
     if (lived && !isCreuser && !creused.has(card.id)) aCreuser.unshift(card);
   }
 
