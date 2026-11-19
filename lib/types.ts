@@ -29,6 +29,36 @@ export type Card = {
   /** Poids 0..1 par centre. La somme doit rester ≈ 1. */
   centers: Partial<Record<CenterId, number>>;
   tags?: string[];
+  /** Absent = carte de la banque fixe (content/cards.ts). */
+  source?: CardSource;
+  /** Compétence ROME visée par une carte générée. Cachée au jeune, tracée. */
+  target?: CardTarget;
+};
+
+/**
+ * - "generated" : texte écrit par le LLM
+ * - "template"  : LLM indisponible, texte construit depuis le libellé ROME
+ */
+export type CardSource = "generated" | "template";
+
+/**
+ * - "explorer" : sonder une zone ROME pas encore vue
+ * - "creuser"  : approfondir une carte où le jeune a dit "déjà fait"
+ */
+export type TargetMode = "explorer" | "creuser";
+
+export type CardTarget = {
+  mode: TargetMode;
+  /** Code OGR de la macro-compétence ROME. */
+  macro: number;
+  /** Libellé ROME de la macro (pour la restitution et le quiz). */
+  label: string;
+  /** Compétence fine visée en mode "creuser", si elle existe. */
+  focus?: string;
+  /** Centre d'intérêt sondé (mode "explorer") ou centre de la carte parente. */
+  center: CenterId;
+  /** Carte qui a déclenché le mode "creuser". */
+  parentId?: string;
 };
 
 export type TraitPair = {

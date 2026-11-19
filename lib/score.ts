@@ -203,8 +203,10 @@ export function recompute(profile: Profile): Profile {
 export function computeProfile(
   responses: Response[],
   traitResponses: TraitResponse[] = [],
+  /** Banque fixe + cartes générées par le swipe adaptatif. */
+  cards: Card[] = CARDS,
 ): Profile {
-  const cardById = new Map(CARDS.map((c) => [c.id, c]));
+  const cardById = new Map(cards.map((c) => [c.id, c]));
   const pairById = new Map(PAIRS.map((p) => [p.id, p]));
 
   let profile = createProfile();
