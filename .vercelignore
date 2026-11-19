@@ -1,0 +1,5 @@
+# ROME raw dump — not needed at build time.
+# The app imports data/rome/jobs-featured.json, which stays included.
+data/rome/unzipped
+data/rome/*.zip
+data/rome/jobs.json

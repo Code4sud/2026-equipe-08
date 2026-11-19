@@ -1,10 +1,11 @@
-# Publie la démo sur GitHub Pages à chaque push sur main.
-# - s'il y a un package.json avec un script "build" : npm ci, npm run build, publication de dist/
-# - sinon : publication de la racine du dépôt (index.html)
-name: Publier la démo
+# La démo live est sur Vercel : https://declic-livid.vercel.app
+#
+# GitHub Pages ne peut pas servir ce build Next tel quel :
+# Cache Components / PPR est incompatible avec output: 'export'.
+# Le workflow reste disponible en manuel si on repasse un jour en export
+# statique (dans ce cas, le build écrit dans out/).
+name: Publier la démo (manuel)
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
@@ -26,7 +27,7 @@ jobs:
         run: |
           if [ -f package.json ] && node -e "process.exit(require('./package.json').scripts?.build ? 0 : 1)"; then
             npm ci && npm run build
-            echo "dir=dist" >> "$GITHUB_OUTPUT"
+            echo "dir=out" >> "$GITHUB_OUTPUT"
           else
             echo "dir=." >> "$GITHUB_OUTPUT"
           fi
