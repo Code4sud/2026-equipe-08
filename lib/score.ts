@@ -111,6 +111,12 @@ export function applyResponse(
     return recompute(next);
   }
 
+  // Carte "creuser" (swipe adaptatif) : question de vécu, pas d'intérêt.
+  // "Non, ce n'est pas moi" ne doit pas faire baisser l'intérêt pour le domaine.
+  if (card.target?.mode === "creuser") {
+    return recompute(next);
+  }
+
   const strength =
     responseStrength(response.direction, response.reason) *
     quality(response.latencyMs);
@@ -203,8 +209,10 @@ export function recompute(profile: Profile): Profile {
 export function computeProfile(
   responses: Response[],
   traitResponses: TraitResponse[] = [],
+  /** Banque fixe + cartes générées par le swipe adaptatif. */
+  cards: Card[] = CARDS,
 ): Profile {
-  const cardById = new Map(CARDS.map((c) => [c.id, c]));
+  const cardById = new Map(cards.map((c) => [c.id, c]));
   const pairById = new Map(PAIRS.map((p) => [p.id, p]));
 
   let profile = createProfile();

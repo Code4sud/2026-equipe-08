@@ -16,7 +16,7 @@ import { cardTone } from "../../lib/presentation";
 import { useRestart } from "../../lib/useRestart";
 import { useSession } from "../../lib/store";
 import { useMounted } from "../../lib/useMounted";
-import type { SwipeDirection, SwipeReason } from "../../lib/types";
+import type { Card, SwipeDirection, SwipeReason } from "../../lib/types";
 
 const TARGET = 35;
 
@@ -27,6 +27,7 @@ const LEFT_REASONS: { id: SwipeReason; label: string }[] = [
   { id: "pas-les-moyens", label: "Pas les moyens" },
   { id: "pas-pres", label: "Pas près de chez moi" },
 ];
+
 
 export default function DeckPage() {
   const router = useRouter();
@@ -42,6 +43,9 @@ export default function DeckPage() {
   const setReason = useSession((s) => s.setReason);
   const resolvePending = useSession((s) => s.resolvePending);
   const startStyle = useSession((s) => s.startStyle);
+  const generated = useSession((s) => s.generated);
+  const awaitingExperience = useSession((s) => s.awaitingExperience);
+  const answerExperience = useSession((s) => s.answerExperience);
 
   const shownAt = useRef(0);
 
@@ -55,7 +59,8 @@ export default function DeckPage() {
 
   const profile = useSession.getState().getProfile();
 
-  const card = CARDS.find((c) => c.id === currentCardId) ?? null;
+  const allCards = [...CARDS, ...generated];
+  const card = allCards.find((c) => c.id === currentCardId) ?? null;
   const tone = card ? cardTone(card) : null;
 
   const activeDomains = CENTER_IDS.filter(
@@ -71,22 +76,26 @@ export default function DeckPage() {
 
   const lastCardResponse =
     lastResponse?.kind === "card" ? responses[lastResponse.index] : null;
+  // Après un non : puces optionnelles. Après un oui : « déjà fait ? » (voir plus bas).
   const showReasons =
-    !pending &&
-    lastCardResponse?.direction === "left" &&
-    responses.length > 0;
+    !pending && !awaitingExperience && lastCardResponse?.direction === "left";
+  const lastCard = lastCardResponse
+    ? allCards.find((c) => c.id === lastCardResponse.cardId)
+    : null;
+  const isCreuser = card?.target?.mode === "creuser";
+  const blocked = Boolean(pending) || awaitingExperience;
 
   const pendingCenter = pending ? CENTER_BY_ID[pending] : null;
   const pendingCards =
     pending && profile
       ? profile.domains[pending].likedCards
-          .map((id) => CARDS.find((c) => c.id === id)?.text)
+          .map((id) => allCards.find((c) => c.id === id)?.text)
           .filter((x): x is string => Boolean(x))
           .slice(0, 3)
       : [];
 
   function commit(direction: SwipeDirection, reason?: SwipeReason) {
-    if (!card || pending) return;
+    if (!card || blocked) return;
     swipeCard(direction, reason, Date.now() - shownAt.current);
   }
 
@@ -158,11 +167,16 @@ export default function DeckPage() {
       />
 
       <div className="mt-4 flex items-center justify-between text-[11px] font-bold uppercase tracking-widest text-ink/40">
-        <span>Ça te tente ?</span>
+        <span>{isCreuser ? "C'est toi ?" : "Ça te tente ?"}</span>
         <span>{responses.length >= 20 ? "tu peux t'arrêter quand tu veux" : "glisse la carte"}</span>
       </div>
 
-      <div className="relative mt-3 min-h-0 flex-1">
+      {/* Pendant « Tu l'as déjà fait ? », la carte suivante s'efface : la question porte sur la précédente. */}
+      <div
+        className={`relative mt-3 min-h-0 flex-1 transition-[opacity,filter] duration-200 ${
+          awaitingExperience ? "pointer-events-none opacity-25 blur-[2px]" : ""
+        }`}
+      >
         <div className="absolute inset-x-5 bottom-3 top-3 rotate-2 rounded-[30px] border-2 border-ink/25 bg-sand/60" />
         <div className="absolute inset-x-2 bottom-4 top-1.5 -rotate-1 rounded-[30px] border-2 border-ink/30 bg-paper" />
 
@@ -172,32 +186,39 @@ export default function DeckPage() {
             card={card}
             tone={tone!}
             onSwipe={commit}
-            disabled={Boolean(pending)}
+            disabled={blocked}
           />
         </AnimatePresence>
       </div>
 
       <div className="mt-4">
+        {awaitingExperience ? (
+          <ExperiencePrompt
+            cardText={lastCard?.text}
+            onAnswer={answerExperience}
+          />
+        ) : (
         <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
-            aria-label="Pas pour moi"
+            aria-label={isCreuser ? "Non" : "Pas pour moi"}
             onClick={() => commit("left")}
-            disabled={Boolean(pending)}
+            disabled={blocked}
             className="hard-shadow-sm flex h-16 items-center justify-center rounded-full border-2 border-ink bg-paper text-2xl transition-transform active:translate-y-0.5 active:shadow-none"
           >
             ✕
           </button>
           <button
             type="button"
-            aria-label="Ça me tente"
+            aria-label={isCreuser ? "Oui, c'est moi" : "Ça me tente"}
             onClick={() => commit("right")}
-            disabled={Boolean(pending)}
+            disabled={blocked}
             className="hard-shadow-sm flex h-16 items-center justify-center rounded-full border-2 border-ink bg-ink text-2xl text-paper transition-transform active:translate-y-0.5 active:shadow-none"
           >
             ♥
           </button>
         </div>
+        )}
 
         <AnimatePresence>
           {showReasons && (
@@ -243,7 +264,7 @@ export default function DeckPage() {
       </div>
 
       <AnimatePresence>
-        {pendingCenter && (
+        {pendingCenter && !awaitingExperience && (
           <ConfirmationOverlay
             title={pendingCenter.short}
             label={pendingCenter.label}
@@ -317,7 +338,7 @@ function SwipeCard({
   onSwipe,
   disabled,
 }: {
-  card: (typeof CARDS)[number];
+  card: Card;
   tone: { bg: string; ink: string };
   onSwipe: (direction: SwipeDirection) => void;
   disabled: boolean;
@@ -351,7 +372,7 @@ function SwipeCard({
         style={{ backgroundColor: tone.bg, color: tone.ink }}
       >
         <span className="text-[10px] font-black uppercase tracking-[0.18em]">
-          Ta prochaine carte
+          {cardBadge(card)}
         </span>
         <span className="text-lg">{card.emoji}</span>
       </div>
@@ -388,8 +409,8 @@ function SwipeCard({
       </div>
 
       <div className="flex items-center justify-between border-t-2 border-ink/80 bg-paper px-5 py-3 text-[10px] font-bold uppercase tracking-widest text-ink/40">
-        <span>← pas pour moi</span>
-        <span>ça me tente →</span>
+        <span>{card.target?.mode === "creuser" ? "← non" : "← pas pour moi"}</span>
+        <span>{card.target?.mode === "creuser" ? "oui, c'est moi →" : "ça me tente →"}</span>
       </div>
     </motion.div>
   );
@@ -467,6 +488,56 @@ function ConfirmationOverlay({
           </div>
         </div>
       </motion.div>
+    </motion.div>
+  );
+}
+
+/** Le jeune voit quand une carte a été écrite pour lui (adaptativité visible). */
+function cardBadge(card: Card): string {
+  if (card.target?.mode === "creuser") return "On creuse un peu";
+  if (card.target) return "Carte rien que pour toi";
+  return "Ta prochaine carte";
+}
+
+/**
+ * Après un oui : « Tu l'as déjà fait ? ». C'est ce qui sépare l'envie du
+ * vécu, et un « oui » déclenche une carte "creuser". Bloquant mais en un tap.
+ */
+function ExperiencePrompt({
+  cardText,
+  onAnswer,
+}: {
+  cardText?: string;
+  onAnswer: (lived: boolean) => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-[26px] border-2 border-ink bg-mint px-4 pb-4 pt-3"
+    >
+      <p className="text-center text-sm font-black tracking-tight">Tu l&apos;as déjà fait ?</p>
+      {cardText && (
+        <p className="mt-0.5 truncate text-center text-xs font-medium text-ink/55">
+          « {cardText} »
+        </p>
+      )}
+      <div className="mt-3 grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          onClick={() => onAnswer(false)}
+          className="h-12 rounded-full border-2 border-ink bg-paper text-sm font-bold"
+        >
+          Pas encore
+        </button>
+        <button
+          type="button"
+          onClick={() => onAnswer(true)}
+          className="hard-shadow-sm h-12 rounded-full border-2 border-ink bg-ink text-sm font-bold text-paper"
+        >
+          Oui, déjà fait
+        </button>
+      </div>
     </motion.div>
   );
 }

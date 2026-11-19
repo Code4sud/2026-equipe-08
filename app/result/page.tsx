@@ -27,6 +27,7 @@ export default function ResultPage() {
   const restart = useRestart();
 
   const responses = useSession((s) => s.responses);
+  const generated = useSession((s) => s.generated);
 
   const realProfile = useSession.getState().getProfile();
 
@@ -34,8 +35,8 @@ export default function ResultPage() {
   const profile = isDemo ? DEMO.profile : realProfile;
 
   const matches = useMemo(
-    () => matchJobs(profile, JOBS, CARDS, JOBS.length),
-    [profile],
+    () => matchJobs(profile, JOBS, [...CARDS, ...generated], JOBS.length),
+    [profile, generated],
   );
   const directions = useMemo(
     () => buildDirections(matches, profile),

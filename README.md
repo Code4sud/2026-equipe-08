@@ -9,6 +9,7 @@ Ce n'est pas un test psychologique. C'est une boussole : **le jeune valide tout 
 **Démo en ligne** : https://declic-livid.vercel.app
 
 - Modèle complet, décisions et limites : [`docs/BASELINE.md`](docs/BASELINE.md)
+- Swipe adaptatif (cartes écrites pour le jeune, ROME, LLM) : [`docs/SWIPE-ADAPTATIF.md`](docs/SWIPE-ADAPTATIF.md)
 - 30 domaines ROME 4.0 · 1 923 métiers importés · ~213 métiers accessibles dans la démo
 - 5 spectres de travail · 15 paires de choix forcés
 - Local-first : pas de compte, pas de backend, données dans `localStorage`
@@ -38,9 +39,19 @@ Routes :
 ```bash
 npm run dev          # serveur de développement
 npm run build        # build production
-npm test             # 17 tests Vitest (scoring, convergence, matching)
+npm test             # tests Vitest (scoring, convergence, matching, swipe adaptatif)
 npm run import:rome  # régénère data/rome/*.json depuis le dump ROME
+npm run build:skills # régénère data/rome/skills.json (macro-compétences ROME)
 npm run lint
+```
+
+### LLM
+
+Une seule couche, `lib/llm`, réglée par `.env.local` :
+
+```bash
+LLM_BACKEND=mock   # défaut : aucun appel, chaque feature a un repli
+LLM_BACKEND=cli    # `claude -p` avec l'abonnement Claude de la machine (local uniquement)
 ```
 
 ---

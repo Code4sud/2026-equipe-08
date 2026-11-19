@@ -1,0 +1,1090 @@
+{
+ "version": "ROME 4.0 v62",
+ "generatedAt": "2026-11-19",
+ "cards": {
+  "104292": {
+   "text": "Gérer les inscriptions pour un tournoi de foot",
+   "hint": "même avec une simple liste",
+   "emoji": "📋"
+  },
+  "118069": {
+   "text": "Tenir la caisse et rendre la monnaie à une buvette",
+   "hint": "même une seule fois",
+   "emoji": "🪙"
+  },
+  "300019": {
+   "text": "Montrer à quelqu'un comment marche une appli, pas à pas",
+   "hint": "même à un pote perdu",
+   "emoji": "📱"
+  },
+  "300028": {
+   "text": "Convaincre des gens de trier leurs déchets au quartier",
+   "hint": "même avec quelques mots",
+   "emoji": "📣"
+  },
+  "300043": {
+   "text": "Faire les tresses ou les ongles d'une pote",
+   "hint": "même juste pour t'amuser",
+   "emoji": "💅"
+  },
+  "300061": {
+   "text": "Laver et brosser un chien",
+   "hint": "même celui d'un voisin",
+   "emoji": "🐕"
+  },
+  "300062": {
+   "text": "Préparer les repas d'un chien ou d'un chat",
+   "hint": "même pour dépanner quelqu'un",
+   "emoji": "🦴"
+  },
+  "300064": {
+   "text": "Soigner la patte blessée d'un chat",
+   "hint": "même avec quelqu'un pour t'aider",
+   "emoji": "🩹"
+  },
+  "300067": {
+   "text": "Ranger les stats de ton équipe dans un tableau",
+   "hint": "foot, jeu vidéo, peu importe",
+   "emoji": "📊"
+  },
+  "300069": {
+   "text": "Dessiner le plan d'une chambre idéale",
+   "hint": "même un croquis rapide",
+   "emoji": "📐"
+  },
+  "300070": {
+   "text": "Fabriquer une mini-version d'un projet en carton",
+   "hint": "Même avec du scotch et des ciseaux",
+   "emoji": "✂️"
+  },
+  "300073": {
+   "text": "Fabriquer une maquette et l'améliorer jusqu'à ce qu'elle marche",
+   "hint": "même avec du carton",
+   "emoji": "🛠️"
+  },
+  "300074": {
+   "text": "Trouver ta propre technique pour gagner à un jeu",
+   "hint": "même un petit calcul perso",
+   "emoji": "🧮"
+  },
+  "300075": {
+   "text": "Inventer un objet qui n'existe pas encore",
+   "hint": "même une idée un peu folle",
+   "emoji": "💡"
+  },
+  "300077": {
+   "text": "Inventer un concept de soirée jamais vu",
+   "hint": "même une idée un peu folle",
+   "emoji": "💡"
+  },
+  "300078": {
+   "text": "Tester plusieurs produits pour trouver le meilleur",
+   "hint": "même juste par curiosité",
+   "emoji": "🧪"
+  },
+  "300079": {
+   "text": "Repérer qui ment dans un jeu entre potes",
+   "hint": "juste en regardant les réactions",
+   "emoji": "🔍"
+  },
+  "300086": {
+   "text": "Goûter une sauce et ajuster les épices",
+   "hint": "même au feeling",
+   "emoji": "🥄"
+  },
+  "300089": {
+   "text": "Faire des croissants ou des cookies maison",
+   "hint": "même si c'est raté la première fois",
+   "emoji": "🥐"
+  },
+  "300090": {
+   "text": "Cuisiner un bon plat pour toute une bande",
+   "hint": "même des pâtes, ça compte",
+   "emoji": "🍝"
+  },
+  "300091": {
+   "text": "Inventer un menu pour une soirée entre potes",
+   "hint": "même avec trois ingrédients",
+   "emoji": "🍝"
+  },
+  "300099": {
+   "text": "Sculpter un truc dans de la pâte à modeler",
+   "hint": "même un petit truc pour rire",
+   "emoji": "🗿"
+  },
+  "300100": {
+   "text": "Donner ton avis sur le style d'une pochette d'album",
+   "hint": "Juste ton ressenti, ça suffit",
+   "emoji": "💿"
+  },
+  "300106": {
+   "text": "S'entraîner plusieurs semaines pour un match ou un tournoi",
+   "hint": "Même au city stade",
+   "emoji": "🏆"
+  },
+  "300110": {
+   "text": "Faire la promo d'une soirée sur les réseaux",
+   "hint": "Même une simple story",
+   "emoji": "📣"
+  },
+  "300118": {
+   "text": "Ranger les photos et fichiers d'un groupe en dossiers clairs",
+   "hint": "même juste sur ton téléphone",
+   "emoji": "🗂️"
+  },
+  "300119": {
+   "text": "Suivre les nouveautés d'un sujet qui te passionne",
+   "hint": "Même juste en scrollant",
+   "emoji": "🔎"
+  },
+  "300125": {
+   "text": "Écrire un petit tuto pour expliquer un truc à d'autres",
+   "hint": "même juste un message",
+   "emoji": "📝"
+  },
+  "300129": {
+   "text": "Suivre un tuto étape par étape pour fabriquer un truc",
+   "hint": "même un petit objet",
+   "emoji": "🛠️"
+  },
+  "300130": {
+   "text": "Doser pile ce qu'il faut pour une recette",
+   "hint": "même pour un gâteau",
+   "emoji": "⚖️"
+  },
+  "300131": {
+   "text": "Poncer un vieux skate avant de le repeindre",
+   "hint": "même sans le finir",
+   "emoji": "🛹"
+  },
+  "300134": {
+   "text": "Coudre ou retoucher un vêtement à la machine",
+   "hint": "même sans jamais avoir essayé",
+   "emoji": "🧵"
+  },
+  "300135": {
+   "text": "Monter une enceinte et régler le son pour une soirée",
+   "hint": "même sans être expert",
+   "emoji": "🔊"
+  },
+  "300136": {
+   "text": "Surveiller la cuisson de biscuits jusqu'à ce qu'ils soient parfaits",
+   "hint": "même juste une fournée",
+   "emoji": "🍪"
+  },
+  "300137": {
+   "text": "Faire lever une pâte à pizza ou à pain",
+   "hint": "même si c'est raté au début",
+   "emoji": "🍞"
+  },
+  "300138": {
+   "text": "Monter puis démonter une scène pour un concert de quartier",
+   "hint": "même juste pour donner un coup de main",
+   "emoji": "🎪"
+  },
+  "300139": {
+   "text": "Régler une console ou une box pour que tout marche",
+   "hint": "même en tâtonnant",
+   "emoji": "🎮"
+  },
+  "300140": {
+   "text": "Retoucher un vêtement pour qu'il tombe parfaitement",
+   "hint": "même sans être pro",
+   "emoji": "🧵"
+  },
+  "300147": {
+   "text": "Trouver la bonne façon de porter du lourd sans se casser le dos",
+   "hint": "des astuces qui changent tout",
+   "emoji": "🏋️"
+  },
+  "300152": {
+   "text": "Rassembler tous les outils avant de bricoler",
+   "hint": "même pour un petit truc",
+   "emoji": "🧰"
+  },
+  "300153": {
+   "text": "Utiliser une perceuse pour monter une étagère",
+   "hint": "même avec quelqu'un à côté",
+   "emoji": "🔧"
+  },
+  "300156": {
+   "text": "Démonter un vieux vélo pour voir comment il marche",
+   "hint": "même sans savoir le remonter",
+   "emoji": "🔧"
+  },
+  "300157": {
+   "text": "Imprimer des flyers pour un événement du quartier",
+   "hint": "même sur une petite imprimante",
+   "emoji": "🖨️"
+  },
+  "300163": {
+   "text": "Mélanger les bons dosages pour faire des cocktails sans alcool",
+   "hint": "même en testant au pif",
+   "emoji": "🧪"
+  },
+  "300164": {
+   "text": "Mesurer un terrain pour tracer un terrain de foot",
+   "hint": "même avec un simple mètre",
+   "emoji": "📏"
+  },
+  "300166": {
+   "text": "Régler une perceuse ou une scie pour un petit bricolage",
+   "hint": "même juste pour essayer",
+   "emoji": "🔩"
+  },
+  "300167": {
+   "text": "Tourner un bol en argile sur un tour de potier",
+   "hint": "même si t'as jamais touché d'argile",
+   "emoji": "🏺"
+  },
+  "300169": {
+   "text": "Régler une imprimante 3D ou une machine à coudre",
+   "hint": "même sans jamais avoir essayé",
+   "emoji": "⚙️"
+  },
+  "300171": {
+   "text": "Régler le son et les lumières d'une soirée",
+   "hint": "Même sans matos pro",
+   "emoji": "🎛️"
+  },
+  "300177": {
+   "text": "Nettoyer à fond un vélo ou une trottinette",
+   "emoji": "🧽"
+  },
+  "300178": {
+   "text": "Recoller ou réparer un meuble qui s'est cassé",
+   "hint": "même avec les moyens du bord",
+   "emoji": "🔨"
+  },
+  "300179": {
+   "text": "Réparer un vélo ou une trottinette en panne",
+   "hint": "même en bidouillant",
+   "emoji": "🔧"
+  },
+  "300182": {
+   "text": "Remettre en marche une manette qui ne répond plus",
+   "hint": "même si t'as jamais essayé",
+   "emoji": "🎮"
+  },
+  "300183": {
+   "text": "Changer la chaîne ou les freins d'un vélo",
+   "hint": "même avec un tuto",
+   "emoji": "🔧"
+  },
+  "300184": {
+   "text": "Dépanner quelqu'un qui galère avec son téléphone",
+   "hint": "même un simple réglage",
+   "emoji": "🔧"
+  },
+  "300185": {
+   "text": "Trouver pourquoi un vélo ou une console ne marche plus",
+   "hint": "même sans tout réparer",
+   "emoji": "🔧"
+  },
+  "300186": {
+   "text": "Calculer si une idée de projet peut vraiment marcher",
+   "hint": "même une idée un peu folle",
+   "emoji": "💡"
+  },
+  "300187": {
+   "text": "Observer comment les gens utilisent un site pour l'améliorer",
+   "hint": "juste par curiosité",
+   "emoji": "🧭"
+  },
+  "300190": {
+   "text": "Installer un coin gaming avec les câbles bien rangés",
+   "hint": "même dans un petit espace",
+   "emoji": "🖥️"
+  },
+  "300191": {
+   "text": "Bricoler un objet pour qu'il marche mieux",
+   "hint": "même avec du scotch",
+   "emoji": "🔧"
+  },
+  "300198": {
+   "text": "Configurer une nouvelle console ou un nouveau téléphone",
+   "hint": "même juste les réglages de base",
+   "emoji": "⚙️"
+  },
+  "300199": {
+   "text": "Créer un petit bot pour ton serveur Discord",
+   "hint": "Même en suivant un tuto",
+   "emoji": "🤖"
+  },
+  "300202": {
+   "text": "Installer et paramétrer un jeu ou un logiciel sur un PC",
+   "hint": "même en suivant un tuto",
+   "emoji": "💻"
+  },
+  "300203": {
+   "text": "Tenir un tableau avec les scores ou les inscrits d'un tournoi",
+   "hint": "même un simple tableau",
+   "emoji": "📊"
+  },
+  "300204": {
+   "text": "Gérer les rôles et accès d'un serveur Discord",
+   "hint": "même un petit serveur entre potes",
+   "emoji": "🖥️"
+  },
+  "300205": {
+   "text": "Choisir les meilleurs ingrédients pour un plat entre potes",
+   "hint": "même juste au supermarché",
+   "emoji": "🥕"
+  },
+  "300206": {
+   "text": "Ramasser des pommes ou des châtaignes en groupe",
+   "hint": "même juste un après-midi",
+   "emoji": "🍎"
+  },
+  "300207": {
+   "text": "Choisir le bon tissu ou bois pour un projet perso",
+   "hint": "même sans être un expert",
+   "emoji": "🧵"
+  },
+  "300208": {
+   "text": "Remplir la machine à pop-corn pendant un événement",
+   "hint": "même juste pour aider",
+   "emoji": "🍿"
+  },
+  "300210": {
+   "text": "Transformer du bois brut en petit meuble",
+   "hint": "même un truc tout simple",
+   "emoji": "🪵"
+  },
+  "300212": {
+   "text": "Préparer des brochettes ou des merguez pour un barbecue",
+   "hint": "même juste pour aider",
+   "emoji": "🍢"
+  },
+  "300213": {
+   "text": "Faire de la confiture ou du jus avec des fruits",
+   "hint": "même juste une fois",
+   "emoji": "🍓"
+  },
+  "300214": {
+   "text": "Vernir ou repeindre un vieux meuble pour le relooker",
+   "hint": "même un petit meuble",
+   "emoji": "🖌️"
+  },
+  "300216": {
+   "text": "Déménager de la vaisselle sans rien casser",
+   "hint": "même pour aider un pote",
+   "emoji": "📦"
+  },
+  "300217": {
+   "text": "Construire un muret en parpaings dans un jardin partagé",
+   "hint": "même juste pour aider",
+   "emoji": "🧱"
+  },
+  "300218": {
+   "text": "Monter une cloison ou installer des étagères au mur",
+   "hint": "même avec un tuto",
+   "emoji": "🔨"
+  },
+  "300219": {
+   "text": "Creuser et aplanir le terrain pour faire un potager",
+   "hint": "Pelle en main, au grand air",
+   "emoji": "⛏️"
+  },
+  "300220": {
+   "text": "Brancher les câbles d'une box, d'une console ou d'une sono",
+   "hint": "même en tâtonnant",
+   "emoji": "🔌"
+  },
+  "300221": {
+   "text": "Construire un petit muret en briques pour un jardin partagé",
+   "hint": "Juste l'envie d'essayer suffit",
+   "emoji": "🧱"
+  },
+  "300224": {
+   "text": "Poser du carrelage ou du parquet dans une pièce",
+   "hint": "même juste pour essayer",
+   "emoji": "🧱"
+  },
+  "300225": {
+   "text": "Calfeutrer une fenêtre qui laisse passer le froid",
+   "hint": "même avec du scotch et un boudin",
+   "emoji": "🪟"
+  },
+  "300226": {
+   "text": "Peaufiner les derniers détails d'une création perso",
+   "hint": "même un petit objet",
+   "emoji": "✨"
+  },
+  "300228": {
+   "text": "Fixer des étagères ou une télé au mur",
+   "hint": "Même avec une simple perceuse",
+   "emoji": "🔩"
+  },
+  "300229": {
+   "text": "Couler du plâtre ou de la résine dans un moule",
+   "hint": "comme une recette, en fait",
+   "emoji": "🫙"
+  },
+  "300230": {
+   "text": "Découper du bois pour fabriquer une étagère",
+   "hint": "même un truc tout simple",
+   "emoji": "🪚"
+  },
+  "300231": {
+   "text": "Découper du bois ou du carton pour fabriquer un truc",
+   "hint": "même un petit bricolage",
+   "emoji": "🪚"
+  },
+  "300232": {
+   "text": "Fabriquer un objet en bois ou en palettes",
+   "hint": "Même un petit truc tout simple",
+   "emoji": "🪵"
+  },
+  "300233": {
+   "text": "Assembler un PC pièce par pièce",
+   "hint": "même juste en regardant comment faire",
+   "emoji": "🖥️"
+  },
+  "300234": {
+   "text": "Customiser des baskets ou une veste",
+   "hint": "même un petit détail",
+   "emoji": "🎨"
+  },
+  "300236": {
+   "text": "Prévoir le matos avant de repeindre une salle d'asso",
+   "hint": "Lister, mesurer, tout anticiper",
+   "emoji": "📋"
+  },
+  "300237": {
+   "text": "Installer des lumières et une sono pour une soirée",
+   "hint": "juste pour essayer",
+   "emoji": "💡"
+  },
+  "300238": {
+   "text": "Organiser qui fait quoi pour retaper un local d'asso",
+   "hint": "même sans être le chef",
+   "emoji": "📋"
+  },
+  "300239": {
+   "text": "Vérifier que tout est bien fini avant de valider",
+   "hint": "un œil qui repère les détails",
+   "emoji": "✅"
+  },
+  "300240": {
+   "text": "Tout ranger et nettoyer après un gros bricolage",
+   "hint": "Le moment où tout redevient propre",
+   "emoji": "🧹"
+  },
+  "300247": {
+   "text": "Trier les fruits et légumes pour garder les meilleurs",
+   "hint": "avoir l'œil, ça s'apprend",
+   "emoji": "🍎"
+  },
+  "300248": {
+   "text": "Tester des baskets avant de dire si elles valent le coup",
+   "hint": "Même juste pour conseiller un pote",
+   "emoji": "👟"
+  },
+  "300250": {
+   "text": "Repérer ce qui bloque dans une organisation pour l'améliorer",
+   "hint": "même dans un petit tournoi",
+   "emoji": "🔍"
+  },
+  "300251": {
+   "text": "Noter un tuto en ligne et dire s'il apprend vraiment",
+   "hint": "Même juste pour prévenir tes potes",
+   "emoji": "⭐"
+  },
+  "300253": {
+   "text": "Repérer les erreurs dans une liste ou un tableau",
+   "hint": "même sans être fort en maths",
+   "emoji": "🔍"
+  },
+  "300259": {
+   "text": "Compter le matériel d'un club en fin de saison",
+   "hint": "même juste les ballons",
+   "emoji": "📦"
+  },
+  "300260": {
+   "text": "Tenir le compte des boissons et snacks pour une soirée",
+   "hint": "savoir ce qui reste, ce qui manque",
+   "emoji": "📦"
+  },
+  "300261": {
+   "text": "Faire les courses pour un barbecue entre potes",
+   "hint": "penser à rien oublier, c'est déjà ça",
+   "emoji": "🛒"
+  },
+  "300262": {
+   "text": "Trier les dons d'une collecte de vêtements",
+   "hint": "même sans t'y connaître",
+   "emoji": "👕"
+  },
+  "300263": {
+   "text": "Vérifier qu'une commande reçue est complète et sans casse",
+   "hint": "Même un colis en ligne",
+   "emoji": "🚚"
+  },
+  "300264": {
+   "text": "Conduire un chariot élévateur pour ranger des palettes",
+   "hint": "on t'apprend, pas de stress",
+   "emoji": "📦"
+  },
+  "300265": {
+   "text": "Porter et ranger le matos d'un déménagement",
+   "hint": "même pour filer un coup de main",
+   "emoji": "📦"
+  },
+  "300266": {
+   "text": "Porter des meubles lourds pour un déménagement",
+   "hint": "même pour aider des potes",
+   "emoji": "📦"
+  },
+  "300267": {
+   "text": "Tracer les lignes d'un terrain de foot à la craie",
+   "hint": "Même pour un match improvisé",
+   "emoji": "📏"
+  },
+  "300268": {
+   "text": "Emballer des colis pour une vente en ligne",
+   "hint": "même pour un pote",
+   "emoji": "📦"
+  },
+  "300269": {
+   "text": "Déposer des colis chez des gens du quartier",
+   "hint": "même pour rendre service",
+   "emoji": "📦"
+  },
+  "300270": {
+   "text": "Conduire un scooter ou une voiture dans les rues",
+   "hint": "juste l'envie, pas besoin du permis",
+   "emoji": "🛵"
+  },
+  "300274": {
+   "text": "Livrer des colis en scooter ou à vélo",
+   "hint": "même pour dépanner un pote",
+   "emoji": "📦"
+  },
+  "300275": {
+   "text": "Conduire des potes pour une sortie",
+   "hint": "même en trottinette ou scooter",
+   "emoji": "🚐"
+  },
+  "300276": {
+   "text": "Prévoir le trajet pour livrer des commandes au quartier",
+   "hint": "même juste en dépannant un pote",
+   "emoji": "🛵"
+  },
+  "300277": {
+   "text": "Prévoir tout le matos pour un tournoi au quartier",
+   "hint": "Tables, son, boissons, ça compte",
+   "emoji": "📦"
+  },
+  "300278": {
+   "text": "Prévoir qui emmène qui et quoi pour une sortie",
+   "hint": "même entre potes",
+   "emoji": "🗺️"
+  },
+  "300279": {
+   "text": "Guider les voitures sur un parking pendant une fête",
+   "hint": "même pour un seul soir",
+   "emoji": "🚦"
+  },
+  "300280": {
+   "text": "Préparer et emballer les commandes d'une petite boutique en ligne",
+   "hint": "même pour un projet de potes",
+   "emoji": "📦"
+  },
+  "300282": {
+   "text": "Remettre une salle propre après une fête",
+   "hint": "même si personne ne l'a vu",
+   "emoji": "🧹"
+  },
+  "300283": {
+   "text": "Garder un œil sur le matos pendant un événement",
+   "hint": "même pendant une heure",
+   "emoji": "👀"
+  },
+  "300284": {
+   "text": "Tenir l'entrée d'une soirée ou d'un concert",
+   "hint": "vérifier qui rentre, tranquillement",
+   "emoji": "🎟️"
+  },
+  "300285": {
+   "text": "Ranger une cave pour que tout rentre",
+   "hint": "Même juste un placard",
+   "emoji": "📦"
+  },
+  "300286": {
+   "text": "Retaper un vieux vélo pour qu'il roule comme neuf",
+   "hint": "même sans t'y connaître",
+   "emoji": "🚲"
+  },
+  "300287": {
+   "text": "S'occuper du matos d'un club ou d'une salle",
+   "hint": "même juste vérifier que tout marche",
+   "emoji": "🗝️"
+  },
+  "300290": {
+   "text": "Trouver le chemin quand tout le monde est perdu",
+   "hint": "même sans GPS",
+   "emoji": "🧭"
+  },
+  "300291": {
+   "text": "Réorganiser une pièce pour qu'on y soit mieux",
+   "hint": "même juste bouger les meubles",
+   "emoji": "🛋️"
+  },
+  "300292": {
+   "text": "Tondre la pelouse et tailler les haies d'un jardin",
+   "hint": "même pour rendre service",
+   "emoji": "🌿"
+  },
+  "300293": {
+   "text": "Réaménager une pièce pour qu'elle soit plus pratique",
+   "hint": "Même juste bouger des meubles",
+   "emoji": "🛋️"
+  },
+  "300294": {
+   "text": "Faire pousser des tomates sur un balcon",
+   "hint": "même dans un petit pot",
+   "emoji": "🍅"
+  },
+  "300295": {
+   "text": "Apprendre à un chien à s'asseoir",
+   "hint": "même le chien d'un pote",
+   "emoji": "🐕"
+  },
+  "300296": {
+   "text": "Nourrir et nettoyer des poules chaque jour",
+   "hint": "même juste pour essayer",
+   "emoji": "🐔"
+  },
+  "300297": {
+   "text": "Nettoyer un coin de forêt avec une asso",
+   "hint": "même pour une journée",
+   "emoji": "🌲"
+  },
+  "300298": {
+   "text": "Organiser le tri des déchets après une fête",
+   "hint": "Même juste ramasser et trier",
+   "emoji": "♻️"
+  },
+  "300302": {
+   "text": "Regarder le ciel pour deviner s'il va pleuvoir",
+   "hint": "même juste avant une sortie",
+   "emoji": "🌦️"
+  },
+  "300305": {
+   "text": "Noter qui a payé quoi pour une commande groupée",
+   "hint": "même entre potes",
+   "emoji": "🧾"
+  },
+  "300308": {
+   "text": "Calculer combien coûte et combien de temps prend un projet",
+   "hint": "Même à peu près, ça compte",
+   "emoji": "⏱️"
+  },
+  "300310": {
+   "text": "Trouver des astuces pour moins gaspiller",
+   "hint": "même des petits gestes",
+   "emoji": "♻️"
+  },
+  "300312": {
+   "text": "Trouver une astuce pour finir un boulot plus vite",
+   "hint": "même un petit raccourci compte",
+   "emoji": "🚀"
+  },
+  "300315": {
+   "text": "Comparer plusieurs vendeurs en ligne avant d'acheter",
+   "hint": "même pour une paire de baskets",
+   "emoji": "🔍"
+  },
+  "300322": {
+   "text": "Suivre tes stats dans un jeu pour progresser",
+   "hint": "Même juste par curiosité",
+   "emoji": "📈"
+  },
+  "300324": {
+   "text": "Créer un tableau pour suivre qui a payé quoi",
+   "hint": "Même sur ton téléphone",
+   "emoji": "📋"
+  },
+  "300330": {
+   "text": "Estimer combien vaut une paire de sneakers d'occasion",
+   "hint": "même au feeling",
+   "emoji": "👟"
+  },
+  "300332": {
+   "text": "Monter un dossier pour financer un projet d'asso",
+   "hint": "On peut apprendre étape par étape",
+   "emoji": "📂"
+  },
+  "300334": {
+   "text": "Prévoir combien acheter pour pas perdre sur une revente",
+   "hint": "même juste pour une petite vente",
+   "emoji": "⚖️"
+  },
+  "300338": {
+   "text": "Vérifier que les règles d'un tournoi sont respectées",
+   "hint": "Même entre potes",
+   "emoji": "📋"
+  },
+  "300353": {
+   "text": "Repérer ce qui peut mal tourner avant une sortie",
+   "hint": "même juste prévoir le coup d'avance",
+   "emoji": "⚠️"
+  },
+  "300358": {
+   "text": "Imaginer une action pour améliorer la vie du quartier",
+   "hint": "même une petite idée",
+   "emoji": "🏘️"
+  },
+  "300361": {
+   "text": "Renseigner les gens perdus à l'entrée d'une gare",
+   "hint": "même pour indiquer un quai",
+   "emoji": "🚉"
+  },
+  "300363": {
+   "text": "Aider quelqu'un à trouver ce qu'il cherche en boutique",
+   "hint": "même pour dépanner",
+   "emoji": "🛍️"
+  },
+  "300364": {
+   "text": "Trouver le cadeau parfait pour quelqu'un d'exigeant",
+   "hint": "en écoutant ce qu'il aime",
+   "emoji": "🎁"
+  },
+  "300366": {
+   "text": "Trouver le cadeau parfait en écoutant ce que quelqu'un veut",
+   "hint": "pas besoin d'être un pro",
+   "emoji": "🎁"
+  },
+  "300367": {
+   "text": "Aider quelqu'un à choisir le bon téléphone",
+   "hint": "Même juste en donnant ton avis",
+   "emoji": "📱"
+  },
+  "300368": {
+   "text": "Revendre des affaires en ligne",
+   "hint": "Même un vieux jeu vidéo",
+   "emoji": "🏷️"
+  },
+  "300369": {
+   "text": "Conclure la vente d'un truc sur Vinted ou Leboncoin",
+   "hint": "même un petit objet",
+   "emoji": "📦"
+  },
+  "300371": {
+   "text": "Trouver des gens pour acheter tes créations ou tes services",
+   "hint": "même juste autour de toi",
+   "emoji": "📣"
+  },
+  "300372": {
+   "text": "Fixer les prix pour une vente de gâteaux",
+   "hint": "même à l'instinct",
+   "emoji": "🏷️"
+  },
+  "300373": {
+   "text": "Faire l'affiche pour un tournoi de foot du quartier",
+   "hint": "Même sans savoir dessiner",
+   "emoji": "📣"
+  },
+  "300374": {
+   "text": "Donner envie à tes potes d'essayer un jeu que t'aimes",
+   "hint": "même sans le faire exprès",
+   "emoji": "🎮"
+  },
+  "300375": {
+   "text": "Installer un stand pour que tout soit bien visible",
+   "hint": "même pour un vide-grenier",
+   "emoji": "🏪"
+  },
+  "300376": {
+   "text": "Faire la pub d'un événement sur les réseaux",
+   "hint": "même une simple story",
+   "emoji": "📱"
+  },
+  "300377": {
+   "text": "Proposer un deal qui arrange tout le monde",
+   "hint": "comme quand tu négocies un échange",
+   "emoji": "🤝"
+  },
+  "300378": {
+   "text": "Aider quelqu'un qui galère avec un truc qu'il a acheté",
+   "hint": "même par message",
+   "emoji": "🛠️"
+  },
+  "300379": {
+   "text": "Faire revenir les mêmes clients à ton stand",
+   "hint": "Un sourire suffit parfois",
+   "emoji": "🔁"
+  },
+  "300381": {
+   "text": "Repérer les sneakers qui vont cartonner avant tout le monde",
+   "hint": "même juste en scrollant",
+   "emoji": "📈"
+  },
+  "300382": {
+   "text": "Tester si une idée de vente plairait vraiment aux gens",
+   "hint": "même en demandant juste autour",
+   "emoji": "🔍"
+  },
+  "300386": {
+   "text": "Trouver le nom et le logo d'un projet entre potes",
+   "hint": "même juste pour délirer",
+   "emoji": "🎨"
+  },
+  "300388": {
+   "text": "Trouver des sous pour financer un projet entre potes",
+   "hint": "Cagnotte, sponsor, vente, tout compte",
+   "emoji": "💡"
+  },
+  "300402": {
+   "text": "Faire visiter ton quartier à des gens de passage",
+   "hint": "même juste les coins que t'aimes",
+   "emoji": "🏛️"
+  },
+  "300405": {
+   "text": "Écrire un message clair pour organiser un tournoi",
+   "hint": "même sur un groupe de potes",
+   "emoji": "✍️"
+  },
+  "300406": {
+   "text": "Écrire en anglais avec des joueurs d'un autre pays",
+   "hint": "même avec des fautes",
+   "emoji": "✍️"
+  },
+  "300407": {
+   "text": "Relire le texte d'un pote pour corriger les fautes",
+   "hint": "même juste un message important",
+   "emoji": "📝"
+  },
+  "300410": {
+   "text": "Expliquer les règles d'un jeu à un groupe",
+   "hint": "même devant trois personnes",
+   "emoji": "🎲"
+  },
+  "300411": {
+   "text": "Discuter en anglais avec des joueurs en ligne",
+   "hint": "même avec quelques mots",
+   "emoji": "🌍"
+  },
+  "300413": {
+   "text": "Présenter un projet devant tout un groupe",
+   "hint": "même avec le trac, c'est normal",
+   "emoji": "🎤"
+  },
+  "300415": {
+   "text": "Convaincre tes potes de choisir ta sortie",
+   "hint": "Même pour un simple resto",
+   "emoji": "🤝"
+  },
+  "300418": {
+   "text": "Convaincre tes potes de tenter ton idée de sortie",
+   "hint": "Même pour un petit plan",
+   "emoji": "💡"
+  },
+  "300421": {
+   "text": "Partager une colloc ou un dortoir en colo",
+   "hint": "juste l'idée",
+   "emoji": "🏠"
+  },
+  "300424": {
+   "text": "Scanner des vieilles photos pour les garder sur ton téléphone",
+   "hint": "même avec une appli gratuite",
+   "emoji": "📸"
+  },
+  "300425": {
+   "text": "Faire grandir un compte Insta ou TikTok",
+   "hint": "même pour une passion perso",
+   "emoji": "📱"
+  },
+  "300426": {
+   "text": "Monter une vidéo ou retoucher des photos sur une appli",
+   "hint": "Même pour t'amuser",
+   "emoji": "💻"
+  },
+  "300428": {
+   "text": "Apprendre un logiciel de montage vidéo ou de musique",
+   "hint": "même sur ton téléphone",
+   "emoji": "🎬"
+  },
+  "300431": {
+   "text": "Tenir à jour la liste des inscrits d'un tournoi",
+   "hint": "même sur ton téléphone",
+   "emoji": "📋"
+  },
+  "300449": {
+   "text": "Expliquer les règles d'un jeu aux nouveaux",
+   "hint": "même un jeu de cartes",
+   "emoji": "🎲"
+  },
+  "300450": {
+   "text": "Garder un secret qu'un pote t'a confié",
+   "hint": "même quand c'est tentant",
+   "emoji": "🤐"
+  },
+  "300451": {
+   "text": "Faire passer une info importante à tout un groupe",
+   "hint": "Même sur un groupe WhatsApp",
+   "emoji": "📢"
+  },
+  "300452": {
+   "text": "Comparer plein d'avis avant d'acheter une paire de baskets",
+   "hint": "même sans t'en rendre compte",
+   "emoji": "🔍"
+  },
+  "300459": {
+   "text": "Trancher quand ton équipe hésite, et dire pourquoi",
+   "hint": "même pour un petit choix",
+   "emoji": "⚖️"
+  },
+  "300462": {
+   "text": "Raconter à ton équipe ce que t'as fait pendant la journée",
+   "hint": "Même en deux phrases",
+   "emoji": "🗣️"
+  },
+  "300463": {
+   "text": "Faire le lien entre deux potes qui se connaissent pas",
+   "hint": "même juste les présenter",
+   "emoji": "🤝"
+  },
+  "300464": {
+   "text": "Caler les horaires d'entraînement de toute une équipe",
+   "hint": "même juste pour un tournoi",
+   "emoji": "📅"
+  },
+  "300468": {
+   "text": "Réconcilier deux potes qui se sont embrouillés",
+   "hint": "même juste calmer le jeu",
+   "emoji": "🤝"
+  },
+  "300469": {
+   "text": "Animer une soirée jeux avec un groupe",
+   "hint": "même juste entre potes",
+   "emoji": "🎲"
+  },
+  "300470": {
+   "text": "Monter un projet à plusieurs sur un groupe de discussion",
+   "hint": "même un truc tout simple",
+   "emoji": "💬"
+  },
+  "300474": {
+   "text": "Prévenir un adulte quand une embrouille dégénère",
+   "hint": "savoir demander de l'aide, ça compte",
+   "emoji": "📣"
+  },
+  "300480": {
+   "text": "Calmer une embrouille entre deux potes",
+   "hint": "Même sans t'en rendre compte",
+   "emoji": "🕊️"
+  },
+  "300491": {
+   "text": "Apprendre par cœur les paroles d'un son",
+   "hint": "même sans t'en rendre compte",
+   "emoji": "🎤"
+  },
+  "300492": {
+   "text": "Apprendre chaque mise à jour d'un jeu avant les autres",
+   "hint": "même juste en matant des vidéos",
+   "emoji": "📲"
+  },
+  "300494": {
+   "text": "Débriefer un match pour savoir ce qui a coincé",
+   "hint": "même juste en discutant après",
+   "emoji": "📋"
+  },
+  "300495": {
+   "text": "Revoir ta partie ou ton match pour voir où t'as raté",
+   "hint": "même vite fait",
+   "emoji": "🔍"
+  },
+  "300499": {
+   "text": "Tester plein de trucs pour trouver ce qui te plaît",
+   "hint": "pas besoin d'avoir déjà une idée",
+   "emoji": "🧭"
+  },
+  "300502": {
+   "text": "Garder contact avec des gens qui peuvent t'aider plus tard",
+   "hint": "même juste en ligne",
+   "emoji": "🤝"
+  },
+  "402000": {
+   "text": "Trouver un plan B quand une sortie tombe à l'eau",
+   "hint": "même au dernier moment",
+   "emoji": "🔀"
+  },
+  "402001": {
+   "text": "Monter un événement avec des potes qui ont chacun un talent",
+   "hint": "même un petit tournoi",
+   "emoji": "🎪"
+  },
+  "402007": {
+   "text": "Réparer ce qui casse dans un local d'asso",
+   "hint": "même une poignée de porte",
+   "emoji": "🔧"
+  },
+  "402008": {
+   "text": "Organiser une collecte de déchets dans ton quartier",
+   "hint": "même une petite action",
+   "emoji": "♻️"
+  },
+  "402009": {
+   "text": "Préparer une soirée pour que tout le monde se sente bien",
+   "hint": "même un petit truc chez toi",
+   "emoji": "🎉"
+  },
+  "403000": {
+   "text": "Dire à un pote ce qui t'a blessé, calmement",
+   "hint": "même si c'est pas facile",
+   "emoji": "💬"
+  },
+  "404512": {
+   "text": "Aider des enfants à apprendre à faire du vélo",
+   "hint": "même juste les encourager",
+   "emoji": "🚲"
+  },
+  "404514": {
+   "text": "Être le maître du jeu d'un loup-garou entre potes",
+   "hint": "même sans être à l'aise",
+   "emoji": "🎲"
+  },
+  "404515": {
+   "text": "Inventer un grand jeu pour une journée au parc",
+   "hint": "même un truc simple",
+   "emoji": "🗺️"
+  },
+  "404516": {
+   "text": "Remplir un dossier d'inscription pour un club ou une asso",
+   "hint": "même avec de l'aide",
+   "emoji": "📝"
+  },
+  "404518": {
+   "text": "Regonfler les pneus et graisser la chaîne d'un vélo",
+   "hint": "même juste pour essayer",
+   "emoji": "🚲"
+  },
+  "404522": {
+   "text": "Convaincre un organisateur de choisir ton équipe pour un événement",
+   "hint": "Même pour un petit truc",
+   "emoji": "📝"
+  },
+  "404524": {
+   "text": "Préparer des cocktails sans alcool pour une soirée",
+   "hint": "même avec trois ingrédients",
+   "emoji": "🍹"
+  },
+  "404525": {
+   "text": "Tenir un poste sur une chaîne de préparation de sandwichs",
+   "hint": "même une seule tâche",
+   "emoji": "🥪"
+  },
+  "404527": {
+   "text": "Garder le chien d'un voisin pendant ses vacances",
+   "hint": "même quelques jours",
+   "emoji": "🐕"
+  },
+  "405056": {
+   "text": "Rester concentré des heures sur un puzzle ou une maquette",
+   "hint": "même sur un jeu vidéo",
+   "emoji": "🧩"
+  }
+ }
+}
