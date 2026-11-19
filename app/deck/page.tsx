@@ -425,8 +425,9 @@ function SwipeCard({
         <span className="text-lg">{card.emoji}</span>
       </div>
 
+      {/* Défilable + contenu centré par my-auto : un texte long ne déborde jamais sur l'en-tête ou le pied. */}
       <div
-        className="relative flex min-h-0 flex-1 flex-col items-center justify-center gap-4 px-6 text-center"
+        className="no-scrollbar relative flex min-h-0 flex-1 flex-col overflow-y-auto px-6 py-4 text-center"
         style={{ backgroundColor: tone.bg, color: tone.ink }}
       >
         <motion.span
@@ -442,24 +443,33 @@ function SwipeCard({
           Oui
         </motion.span>
 
-        {parentText && (
-          <p className="max-w-full rounded-2xl border-2 border-current/20 bg-paper/55 px-3 py-1.5 text-xs font-semibold leading-snug opacity-90">
-            <span className="opacity-60">Tu as dit déjà fait : </span>
-            <span className="line-clamp-2">« {parentText} »</span>
-          </p>
-        )}
-
-        <div className="grid h-24 w-24 shrink-0 place-items-center rounded-full border-2 border-ink/10 bg-paper/55 text-5xl shadow-inner">
-          {card.emoji}
-        </div>
-
-        <div>
-          <p className="text-2xl font-black leading-[1.05] tracking-[-0.03em] sm:text-3xl">
-            {card.text}
-          </p>
-          {card.hint && !(parentText && card.hint.startsWith("Quand tu as fait")) && (
-            <p className="mt-3 text-sm font-medium opacity-60">{card.hint}</p>
+        <div className="my-auto flex flex-col items-center gap-4">
+          {parentText && (
+            <p className="max-w-full rounded-2xl border-2 border-current/20 bg-paper/55 px-3 py-1.5 text-xs font-semibold leading-snug opacity-90">
+              <span className="opacity-60">Tu as dit déjà fait : </span>
+              <span className="line-clamp-2">« {parentText} »</span>
+            </p>
           )}
+
+          {/* Carte creuser : l'emoji est déjà dans l'en-tête, la place va au rappel et à la question. */}
+          {!parentText && (
+            <div className="grid h-24 w-24 shrink-0 place-items-center rounded-full border-2 border-ink/10 bg-paper/55 text-5xl shadow-inner">
+              {card.emoji}
+            </div>
+          )}
+
+          <div>
+            <p
+              className={`font-black leading-[1.05] tracking-[-0.03em] ${
+                card.text.length > 60 ? "text-xl sm:text-2xl" : "text-2xl sm:text-3xl"
+              }`}
+            >
+              {card.text}
+            </p>
+            {card.hint && !(parentText && card.hint.startsWith("Quand tu as fait")) && (
+              <p className="mt-3 text-sm font-medium opacity-60">{card.hint}</p>
+            )}
+          </div>
         </div>
       </div>
 
