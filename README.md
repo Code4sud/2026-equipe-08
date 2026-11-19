@@ -1,8 +1,8 @@
-# Déclic
+# Orientis
 
 > **T'as plus de skills que tu crois.**
 
-Déclic est un jeu de cartes qui aide les 17–25 ans éloignés de l'emploi à mettre des mots sur ce qu'ils savent faire. On swipe des activités concrètes, on répond à 15 choix entre deux situations de travail, puis l'app rend **3 directions métier** avec, pour chacune, les cartes qui la soutiennent, les compétences ROME et un point de friction.
+Orientis est un jeu de cartes qui aide les 17–25 ans éloignés de l'emploi à mettre des mots sur ce qu'ils savent faire. On swipe des activités concrètes, on répond à 15 choix entre deux situations de travail, puis l'app rend **3 directions métier** avec, pour chacune, les cartes qui la soutiennent, les compétences ROME et un point de friction.
 
 Ce n'est pas un test psychologique. C'est une boussole : **le jeune valide tout ce qui est retenu**.
 
