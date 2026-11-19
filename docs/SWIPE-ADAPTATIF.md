@@ -39,7 +39,7 @@ banque fixe ──► swipe ──► état (réponses + cartes générées)
 | 10 | **Plafonds** : 6 cartes creuser, 18 cartes générées, on ne creuse pas une carte creuser. | Garder le swipe court et éviter l'interrogatoire. |
 | 11 | **Alternance** banque / adaptatif ; une carte creuser prête passe devant. Le client garde **une carte d'avance** et ne bloque jamais sur le LLM. | `claude -p` met plusieurs secondes : la banque comble l'attente. Les situations écrites à la main restent visibles. |
 | 12 | **Démarrage après 2 cartes** de la banque. | Zéro latence au début, et un premier signal avant de générer. |
-| 13 | **Garde-fous sur le texte généré** : santé, origine, religion, famille (« ton petit frère », « tes parents »…), argent, situation administrative, « tu es… », longueur. Échec → texte construit depuis le libellé ROME. | Un faux positif coûte une carte moins jolie ; un faux négatif coûte la confiance du jeune. |
+| 13 | **Garde-fous sur le texte généré, en deux niveaux.** Toujours bloqué : religion, origine, papiers, sexualité. Bloqué **seulement quand ça vise le jeune** : santé (« ton traitement », « t'es malade ») et famille (« ton petit frère », « tes parents »). Permis : « aider un pote à l'hôpital », « animer ton atelier pour enfants », « trouver l'origine de la panne ». Échec → texte construit depuis le libellé ROME. | Le brief interdit les **déductions** sur le jeune, pas les situations. Un filtre trop large tue les bonnes cartes ; le prompt fait le gros du travail, le filtre rattrape les dérapages nets. 22 cas testés (8 bloqués, 14 acceptés). |
 | 14 | **Aucune donnée personnelle envoyée au LLM** : le swipe ne contient pas de texte libre. Le LLM reçoit la cible ROME et les textes des cartes déjà montrées. | Le sujet le plus sensible du hackathon. |
 | 15 | **Le jeune voit quand une carte a été écrite pour lui** (« Carte rien que pour toi », « On creuse un peu »). | L'adaptativité se voit en démo, et c'est honnête. |
 | 16 | **Une seule couche LLM** (`lib/llm`) : `mock` (défaut), `cli` (`claude -p`, abonnement, local), `api` (à brancher). Sortie validée par zod quel que soit le mode. | Les coéquipiers sans abonnement développent en `mock`. Changer de mode = une variable d'environnement. |
@@ -72,6 +72,18 @@ Avec ton abonnement Claude (en local, CLI `claude` installée et connectée), cr
 LLM_BACKEND=cli
 # LLM_MODEL=claude-opus-5-5    # défaut
 ```
+
+## Mesuré avec `claude -p` (Claude Opus 5.5, effort bas)
+
+7 cartes générées, 7 acceptées par les garde-fous, **4,5 à 6 s** par carte (11 s pour une short-list floue de 8 compétences), en parallèle. Exemples :
+
+| Situation | Compétence ROME | Carte écrite |
+|---|---|---|
+| explorer | Gérer les stocks | 📦 T'as déjà compté ce qui restait avant une soirée entre potes ? — *Boissons, chips, même vite fait* |
+| creuser « Gérer la caisse d'une asso » | Définir la tarification (choisie dans la short-list) | 🏷️ Et c'est toi qui fixais les prix des trucs vendus ? — *Même pour une buvette ou des gâteaux* |
+| creuser « Démonter et réparer un scooter » | Réaliser un diagnostic technique | 🔍 Et c'est toi qui as trouvé d'où venait la panne ? — *Même en testant pièce par pièce* |
+| creuser « Garder des enfants » | Accompagner le développement de l'enfant | 📚 Et c'est toi qui les aidais à faire leurs devoirs ? — *Même juste lire une histoire, ça compte* |
+| creuser « Vendre des trucs sur Vinted » | Présenter et valoriser un produit | 📸 Et c'est toi qui prenais les photos et écrivais l'annonce ? |
 
 ## Contrat pour le quiz (P3)
 

@@ -16,54 +16,55 @@ import type { CardDraft, TargetPlan } from "./target";
 // ---------------------------------------------------------------------------
 
 /**
- * Une carte ne doit jamais toucher à la santé, l'origine, la religion, la
- * famille ou la situation administrative du jeune. Liste volontairement
- * large : un faux positif coûte une carte template, un faux négatif coûte
- * la confiance du jeune.
+ * Le brief interdit toute DÉDUCTION sur la santé, l'origine, la famille ou
+ * la religion du jeune. On bloque donc :
+ *  1. les thèmes qui n'ont rien à faire dans une carte (religion, origine,
+ *     papiers, sexualité), quel que soit le contexte ;
+ *  2. la santé et la famille seulement quand elles visent LE JEUNE
+ *     ("ton traitement", "t'es malade", "ton petit frère").
+ * Parler d'aider un pote à l'hôpital ou d'animer un atelier pour enfants
+ * reste permis : ce sont des situations, pas des déductions.
+ * Le prompt fait le gros du travail ; ce filtre rattrape les dérapages nets.
  */
+const ALWAYS_BLOCKED = [
+  "religi",
+  "pri[èe]re",
+  "mosqu[ée]e",
+  "[ée]glise",
+  "synagogue",
+  "ramadan",
+  "car[êe]me",
+  "\\bdieu\\b",
+  "pays d'origine",
+  "\\b(tes|tas|ton|ta) origines?\\b",
+  "nationalit",
+  "titre de s[ée]jour",
+  "sans[- ]papiers",
+  "\\bethni",
+  "sexualit",
+  "orientation sexuelle",
+];
+
+/** "toi" : ton, ta, tes, t'es, tu es, t'as, tu as (+ formes 1re personne). */
+const SELF = "(?:ton|ta|tes|mon|ma|mes|t'es|tu es|t'as|tu as|j'ai|je suis)";
+/** 0 ou 1 mot entre le possessif et le nom, sauf préposition ("ton atelier POUR enfants" passe). */
+const GAP = "(?:(?!pour\\b|avec\\b|de\\b|des\\b|du\\b|aux?\\b)[\\p{L}'-]+\\s+)?";
+
+const HEALTH = "(?:sant[ée]|malade|maladie|handicap\\w*|traitement|m[ée]dicaments?|h[ôo]pital|psy\\w*|d[ée]pression|enceinte)";
+const FAMILY =
+  "(?:m[èe]res?|maman|p[èe]res?|papa|parents?|fr[èe]res?|s(?:œ|oe)urs?|famille|cousins?|cousines?|oncles?|tantes?|grands?-parents?|grand-m[èe]re|grand-p[èe]re|enfants?|fils|filles?|daronn?e?s?)";
+
 const SENSITIVE = new RegExp(
-  [
-    "sant[ée]",
-    "malad",
-    "handicap",
-    "m[ée]dicament",
-    "traitement",
-    "h[ôo]pital",
-    "\\bpsy",
-    "d[ée]pression",
-    "religi",
-    "pri[èe]re",
-    "mosqu[ée]e",
-    "[ée]glise",
-    "synagogue",
-    "ramadan",
-    "car[êe]me",
-    "\\bdieu\\b",
-    "origine",
-    "nationalit",
-    "\\bpays\\b",
-    "papiers",
-    "titre de s[ée]jour",
-    "\\bethni",
-    // possessif + 0 à 2 mots + lien familial ("ton petit frère", "tes grands-parents")
-    "\\b(ton|ta|tes|mon|ma|mes|sa|son|ses)\\s+([\\p{L}-]+\\s+){0,2}(m[èe]res?|maman|p[èe]res?|papa|parents?|fr[èe]res?|s(œ|oe)urs?|famille|cousins?|cousines?|oncles?|tantes?|grands?-parents?|grand-m[èe]re|grand-p[èe]re|enfants?|fils|filles?)\\b",
-    "enceinte",
-    "sexualit",
-    "politique",
-    "argent de poche",
-    "\\bdettes?\\b",
-  ].join("|"),
+  [...ALWAYS_BLOCKED, `\\b${SELF}\\s+${GAP}${HEALTH}\\b`, `\\b${SELF}\\s+${GAP}${FAMILY}\\b`].join("|"),
   "iu",
 );
 
-const MAX_TEXT = 80;
-const MAX_HINT = 70;
+const MAX_TEXT = 90;
+const MAX_HINT = 80;
 
 export function isSafeDraft(draft: CardDraft): boolean {
-  const all = `${draft.text} ${draft.hint ?? ""}`;
+  const all = `${draft.text} ${draft.hint ?? ""}`.replace(/[’]/g, "'");
   if (SENSITIVE.test(all)) return false;
-  // "Tu es manuel" = une étiquette, pas une situation.
-  if (/\btu es\b/i.test(draft.text)) return false;
   if (draft.text.length < 8 || draft.text.length > MAX_TEXT) return false;
   if ((draft.hint?.length ?? 0) > MAX_HINT) return false;
   return true;

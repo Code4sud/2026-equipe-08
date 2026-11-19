@@ -163,24 +163,36 @@ describe("construction de la carte", () => {
 });
 
 describe("garde-fous", () => {
-  it("refuse les thèmes sensibles et les étiquettes", () => {
+  it("refuse les déductions sur le jeune et les thèmes interdits", () => {
     const blocked = [
       "Traduire pour tes parents à la mairie",
       "Garder ton petit frère le mercredi",
+      "Aider ta daronne à la maison",
       "Aller à la mosquée avec des potes",
       "Expliquer ton traitement au médecin",
+      "Quand t'es malade, qui s'occupe de tout ?",
       "Raconter ton pays d'origine",
-      "Tu es super organisé",
+      "Parler de tes origines",
     ];
     for (const text of blocked) expect(isSafeDraft({ text }), text).toBe(false);
   });
 
-  it("accepte des situations neutres", () => {
+  it("n'est pas trop strict : situations légitimes acceptées", () => {
     const ok = [
       "Traduire pour quelqu'un qui ne parle pas français",
       "Garder des plus petits tout un après-midi",
       "Tenir la caisse au tournoi du quartier",
       "Faire un plan de paysage pour un jardin",
+      "Trouver l'origine de la panne",
+      "Remplir des papiers pour quelqu'un",
+      "Animer ton atelier pour enfants",
+      "Monter un meuble même si t'es maladroit",
+      "Accompagner un pote à l'hôpital",
+      "Tu es déjà allé aider à une collecte ?",
+      "Gérer ton argent pour tenir le mois",
+      "Expliquer la politique du club aux nouveaux",
+      "Faire un traitement de texte propre",
+      "T'as déjà compté ce qui restait avant une soirée entre potes ?",
     ];
     for (const text of ok) expect(isSafeDraft({ text }), text).toBe(true);
   });
