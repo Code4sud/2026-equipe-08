@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { CENTER_BY_ID } from "../centers";
+import { statusLabel, studiesLabel } from "../presentation";
 import { TRAIT_META, traitSummary } from "../traits";
 import type {
   Dossier,
@@ -164,8 +165,8 @@ export function buildFacts(dossier: Dossier): DossierFacts {
     }),
     user: {
       age: dossier.user.age,
-      studiesLevel: dossier.user.studiesLevel,
-      status: dossier.user.currentStatus,
+      studiesLevel: studiesLabel(dossier.user.studiesLevel),
+      status: statusLabel(dossier.user.currentStatus),
       experience: dossier.experience.map((e) => ({
         title: e.title,
         detail: e.detail,

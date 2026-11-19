@@ -94,7 +94,7 @@ export function demoUserFromDossier(
     currentStatus: STATUS[user.currentStatus ?? ""] ?? base.currentStatus,
     driverLicense: user.constraints?.driverLicense ?? base.driverLicense,
     mobilityKm: user.constraints?.mobilityKm ?? base.mobilityKm,
-    experience: experience.length > 0 ? experience : base.experience,
+    experience,
   };
 }
 

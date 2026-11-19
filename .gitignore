@@ -45,3 +45,6 @@ next-env.d.ts
 /data/rome/unzipped/
 /data/rome/*.zip
 /data/rome/jobs.json
+
+# Local prompt debug log (may contain interview answers)
+/.llm-debug/

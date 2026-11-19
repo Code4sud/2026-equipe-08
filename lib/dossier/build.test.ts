@@ -32,7 +32,7 @@ describe("dossier de démonstration", () => {
     expect(competences).toContain(
       "Réparer un équipement, une machine, une installation",
     );
-    expect(titles.length).toBeGreaterThanOrEqual(4);
+    expect(titles.length).toBeGreaterThanOrEqual(3);
   });
 
   it("associe des formations et des offres réelles du jeu de démo", () => {

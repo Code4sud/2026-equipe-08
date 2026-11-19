@@ -18,7 +18,7 @@ import { TRAITS, RIASEC } from "../types";
 import type { Job, JobMatch, Profile } from "../types";
 import { TRAIT_META, traitSummary } from "../traits";
 import { OFFERS, TRAININGS } from "./demo";
-import { extractExperience, mergeExperience } from "./experience";
+import { extractExperience } from "./experience";
 import { applyNarrative } from "./narrative";
 import type {
   BuildInput,
@@ -232,7 +232,10 @@ function makeCv(
         heading: "Expériences & compétences",
         items: experience.map((item) => ({
           title: item.title,
-          detail: item.detail,
+          detail:
+            item.competences?.length && item.competences.length > 0
+              ? item.competences.join(" · ")
+              : item.detail,
         })),
       },
       {
@@ -332,12 +335,12 @@ function makeActionPlan(
 export function buildDossier(input: BuildInput): Dossier {
   const { session, profile, user } = input;
   const allCards = [...CARDS, ...session.generated];
-  // Le `user` vient de l'étape 2 (réponses d'entretien) : il est plus riche
-  // que la simple trace des swipes, donc il passe devant dans le CV.
-  const experience = mergeExperience(
-    user.experience,
-    extractExperience(session),
-  );
+  // Si l'étape 2 a produit des récits, ils remplacent la simple trace des
+  // swipes : sinon le CV et le prompt IA contiennent 15 entrées dupliquées.
+  const experience =
+    user.experience.length > 0
+      ? user.experience
+      : extractExperience(session);
   const matches = matchJobs(profile, JOBS, allCards, JOBS.length);
   const directions = makeDirections(matches, profile);
   const trainings = uniqueBy(

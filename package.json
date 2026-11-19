@@ -12,6 +12,7 @@
     "import:rome": "node scripts/import-rome.mjs",
     "build:skills": "node scripts/build-skills.mjs",
     "pregen:cards": "tsx scripts/pregen-cards.ts",
+    "prompts": "tsx scripts/dump-prompts.ts",
     "claude": "bash scripts/claude.sh"
   },
   "dependencies": {

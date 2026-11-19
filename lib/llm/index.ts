@@ -1,3 +1,6 @@
+import { randomUUID } from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
 import type { z } from "zod";
 import { runClaudeCli } from "./cli";
 
@@ -45,6 +48,26 @@ export type CompleteJsonResult<T> = {
 };
 
 /**
+ * Journal local des prompts, pour les régler sans deviner.
+ * Désactivé par défaut ; jamais sur Vercel.
+ * Contient potentiellement des réponses d'entretien : local uniquement.
+ */
+function debugPrompts(entry: Record<string, unknown>): void {
+  if (process.env.LLM_DEBUG_PROMPTS !== "1" || process.env.VERCEL) return;
+  try {
+    const dir = path.join(process.cwd(), ".llm-debug");
+    fs.mkdirSync(/*turbopackIgnore: true*/ dir, { recursive: true });
+    fs.appendFileSync(
+      /*turbopackIgnore: true*/ path.join(dir, "prompts.jsonl"),
+      `${JSON.stringify({ ts: new Date().toISOString(), ...entry })}\n`,
+      "utf8",
+    );
+  } catch {
+    // pas de debug si le disque est en lecture seule.
+  }
+}
+
+/**
  * Version détaillée : le mode démo peut afficher pourquoi l'IA n'a pas répondu
  * (mock, CLI absent, session OAuth expirée, sortie hors schéma).
  */
@@ -64,32 +87,59 @@ export async function completeJsonDetailed<T>(
     };
   }
 
+  const model = process.env.LLM_MODEL || DEFAULT_MODEL;
+  const envEffort = process.env.LLM_EFFORT;
+  const effort: Effort =
+    envEffort === "medium" || envEffort === "high" || envEffort === "low"
+      ? envEffort
+      : (opts.effort ?? "low");
+  const timeoutMs = opts.timeoutMs ?? 30_000;
+  const requestId = randomUUID();
+
+  debugPrompts({
+    phase: "request",
+    requestId,
+    backend,
+    model,
+    effort,
+    timeoutMs,
+    system: opts.system,
+    prompt: opts.prompt,
+    jsonSchema: opts.jsonSchema,
+  });
+
   try {
     const raw = await runClaudeCli({
       system: opts.system,
       prompt: opts.prompt,
       jsonSchema: opts.jsonSchema,
-      model: process.env.LLM_MODEL || DEFAULT_MODEL,
-      effort: opts.effort ?? "low",
-      timeoutMs: opts.timeoutMs ?? 30_000,
+      model,
+      effort,
+      timeoutMs,
     });
     const parsed = opts.schema.safeParse(raw);
     if (!parsed.success) {
-      return {
-        data: null,
-        backend,
-        error: `sortie hors schéma : ${parsed.error.issues
-          .slice(0, 3)
-          .map((issue) => issue.message)
-          .join(", ")}`,
-      };
+      const error = `sortie hors schéma : ${parsed.error.issues
+        .slice(0, 3)
+        .map((issue) => issue.message)
+        .join(", ")}`;
+      debugPrompts({ phase: "response", requestId, ok: false, error });
+      return { data: null, backend, error };
     }
+    debugPrompts({
+      phase: "response",
+      requestId,
+      ok: true,
+      data: parsed.data,
+    });
     return { data: parsed.data, backend };
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    debugPrompts({ phase: "response", requestId, ok: false, error: message });
     return {
       data: null,
       backend,
-      error: error instanceof Error ? error.message : String(error),
+      error: message,
     };
   }
 }
