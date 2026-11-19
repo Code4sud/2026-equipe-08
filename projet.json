@@ -1,8 +1,7 @@
 {
   "nom": "Orientis",
   "pitch": "Work in Progress",
-  "description": "Quand on demande à un jeune en décrochage ce qu’il sait faire, il répond souvent « rien ». Pourtant, il a gardé ses petits frères, réparé des scooters ou tenu la caisse d’une association. Orientis est un jeu de cartes qui aide les 17-25 ans éloignés de l’emploi à repérer ce qu’ils savent déjà faire.
-",
+  "description": "",
   "ecoles": ["AIVANCITY", "42 Nice"],
   "stack": ["Claude", "nextjs"],
   "demo": "https://code4sud.github.io/2026-equipe-08/",
