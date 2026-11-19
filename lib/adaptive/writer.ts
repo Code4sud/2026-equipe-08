@@ -15,59 +15,15 @@ import type { CardDraft, TargetPlan } from "./target";
 // Garde-fous
 // ---------------------------------------------------------------------------
 
-/**
- * Le brief interdit toute DÉDUCTION sur la santé, l'origine, la famille ou
- * la religion du jeune. On bloque donc :
- *  1. les thèmes qui n'ont rien à faire dans une carte (religion, origine,
- *     papiers, sexualité), quel que soit le contexte ;
- *  2. la santé et la famille seulement quand elles visent LE JEUNE
- *     ("ton traitement", "t'es malade", "ton petit frère").
- * Parler d'aider un pote à l'hôpital ou d'animer un atelier pour enfants
- * reste permis : ce sont des situations, pas des déductions.
- * Le prompt fait le gros du travail ; ce filtre rattrape les dérapages nets.
- */
-const ALWAYS_BLOCKED = [
-  "religi",
-  "pri[èe]re",
-  "mosqu[ée]e",
-  "[ée]glise",
-  "synagogue",
-  "ramadan",
-  "car[êe]me",
-  "\\bdieu\\b",
-  "pays d'origine",
-  "\\b(tes|tas|ton|ta) origines?\\b",
-  "nationalit",
-  "titre de s[ée]jour",
-  "sans[- ]papiers",
-  "\\bethni",
-  "sexualit",
-  "orientation sexuelle",
-];
+// Filtre de thèmes sensibles retiré pour l'instant (décision d'équipe) :
+// le prompt cadre seul. Version précédente : commit 5ceeea1.
+// On garde uniquement des contrôles de forme pour ne pas casser l'affichage.
 
-/** "toi" : ton, ta, tes, t'es, tu es, t'as, tu as (+ formes 1re personne). */
-const SELF = "(?:ton|ta|tes|mon|ma|mes|t'es|tu es|t'as|tu as|j'ai|je suis)";
-/** 0 ou 1 mot entre le possessif et le nom, sauf préposition ("ton atelier POUR enfants" passe). */
-const GAP = "(?:(?!pour\\b|avec\\b|de\\b|des\\b|du\\b|aux?\\b)[\\p{L}'-]+\\s+)?";
+const MAX_TEXT = 120;
+const MAX_HINT = 100;
 
-const HEALTH = "(?:sant[ée]|malade|maladie|handicap\\w*|traitement|m[ée]dicaments?|h[ôo]pital|psy\\w*|d[ée]pression|enceinte)";
-const FAMILY =
-  "(?:m[èe]res?|maman|p[èe]res?|papa|parents?|fr[èe]res?|s(?:œ|oe)urs?|famille|cousins?|cousines?|oncles?|tantes?|grands?-parents?|grand-m[èe]re|grand-p[èe]re|enfants?|fils|filles?|daronn?e?s?)";
-
-const SENSITIVE = new RegExp(
-  [...ALWAYS_BLOCKED, `\\b${SELF}\\s+${GAP}${HEALTH}\\b`, `\\b${SELF}\\s+${GAP}${FAMILY}\\b`].join("|"),
-  "iu",
-);
-
-const MAX_TEXT = 90;
-const MAX_HINT = 80;
-
-export function isSafeDraft(draft: CardDraft): boolean {
-  const all = `${draft.text} ${draft.hint ?? ""}`.replace(/[’]/g, "'");
-  if (SENSITIVE.test(all)) return false;
-  if (draft.text.length < 8 || draft.text.length > MAX_TEXT) return false;
-  if ((draft.hint?.length ?? 0) > MAX_HINT) return false;
-  return true;
+export function isUsableDraft(draft: CardDraft): boolean {
+  return draft.text.length >= 4 && draft.text.length <= MAX_TEXT && (draft.hint?.length ?? 0) <= MAX_HINT;
 }
 
 // ---------------------------------------------------------------------------
@@ -198,7 +154,7 @@ export async function writeCard(
     hint: out.hint?.trim() || undefined,
     emoji: firstEmoji(out.emoji),
   };
-  if (!isSafeDraft(draft)) return fallback;
+  if (!isUsableDraft(draft)) return fallback;
 
   return { macro, draft, source: "generated" };
 }

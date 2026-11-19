@@ -4,7 +4,7 @@ import { computeProfile } from "../score";
 import type { Card, Response } from "../types";
 import { getMacro, isSwipeTarget, poolFor } from "./skills";
 import { buildCard, cardCenters, coverage, pickTarget, statusOf } from "./target";
-import { isSafeDraft, templateDraft } from "./writer";
+import { templateDraft } from "./writer";
 
 function mulberry32(seed: number) {
   return function () {
@@ -159,41 +159,5 @@ describe("construction de la carte", () => {
       "generated",
     );
     expect(card.target).toMatchObject({ mode: "creuser", macro: 118069, label: "Gérer une caisse", parentId: "caisse-asso" });
-  });
-});
-
-describe("garde-fous", () => {
-  it("refuse les déductions sur le jeune et les thèmes interdits", () => {
-    const blocked = [
-      "Traduire pour tes parents à la mairie",
-      "Garder ton petit frère le mercredi",
-      "Aider ta daronne à la maison",
-      "Aller à la mosquée avec des potes",
-      "Expliquer ton traitement au médecin",
-      "Quand t'es malade, qui s'occupe de tout ?",
-      "Raconter ton pays d'origine",
-      "Parler de tes origines",
-    ];
-    for (const text of blocked) expect(isSafeDraft({ text }), text).toBe(false);
-  });
-
-  it("n'est pas trop strict : situations légitimes acceptées", () => {
-    const ok = [
-      "Traduire pour quelqu'un qui ne parle pas français",
-      "Garder des plus petits tout un après-midi",
-      "Tenir la caisse au tournoi du quartier",
-      "Faire un plan de paysage pour un jardin",
-      "Trouver l'origine de la panne",
-      "Remplir des papiers pour quelqu'un",
-      "Animer ton atelier pour enfants",
-      "Monter un meuble même si t'es maladroit",
-      "Accompagner un pote à l'hôpital",
-      "Tu es déjà allé aider à une collecte ?",
-      "Gérer ton argent pour tenir le mois",
-      "Expliquer la politique du club aux nouveaux",
-      "Faire un traitement de texte propre",
-      "T'as déjà compté ce qui restait avant une soirée entre potes ?",
-    ];
-    for (const text of ok) expect(isSafeDraft({ text }), text).toBe(true);
   });
 });
