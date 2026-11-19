@@ -216,7 +216,7 @@ L'app insère alors une **carte de confirmation**, pas un swipe :
 
 > « On dirait que le travail manuel, c'est vraiment ton truc. Voilà ce qui nous fait dire ça : [3 cartes]. Tu confirmes ? »
 
-- **Oui** → domaine verrouillé, retiré de la pêche, bonus fort dans le matching.
+- **Oui** → domaine verrouillé, **passé en approfondissement** (il reste prioritaire dans le tirage), bonus fort dans le matching.
 - **Pas vraiment** → domaine remis au prior, retiré de la pêche, cartes trompeuses écartées.
 
 C'est le « 100 % » : **une validation humaine**, pas une prétention statistique. Le jeune peut changer d'avis plus tard.
@@ -236,18 +236,23 @@ C'est le « 100 % » : **une validation humaine**, pas une prétention statistiq
 
 Deux régimes, pas deux phases arbitraires :
 
-1. **Cartes 1–15 — couverture.** On priorise les centres jamais vus (`nEff < 0,6`) et les plus incertains ; pénalité si la carte dominante est la même que les 2 précédentes.
-2. **Cartes 16+ — UCB.** Pour chaque centre actif :
+1. **Couverture — 12 cartes maximum.** On priorise les centres jamais vus (`nEff < 0,6`) et les plus incertains, nuancé par la moyenne (`+ 1,5 · (moyenne − 0,5)`) ; pénalité si la carte dominante est la même que les 2 précédentes. La phase s'arrête **dès qu'un intérêt se dessine** : un centre avec ≥ 2 cartes aimées et une moyenne ≥ 0,6 (ou un centre confirmé).
+2. **Ensuite — UCB.** Pour chaque centre actif :
 
 ```
-priorité_c = moyenne_c + 0,38 · sqrt( log(n + 2) / (nEff_c + 0,5) )
+moyenne'_c = nEff_c ≥ 1 ? moyenne_c : min(moyenne_c, 0,45)   // a priori prudent
+priorité_c = moyenne'_c + 0,10 · sqrt( log(n + 2) / (nEff_c + 0,5) )
 ```
 
-Le **set de focus** se resserre : 30 → 12 → 6 centres. Hors focus, la priorité est multipliée par 0,35 (exploration résiduelle). Pénalité de diversité 0,85 si même centre dominant, 4 % d'aléatoire.
+Le **set de focus** se resserre : 30 → 12 → 6 centres, classés sur `moyenne'` : un centre à peine vu passe derrière les centres aimés au lieu d'occuper le focus avec sa moyenne a priori de 0,5. Hors focus, la priorité est multipliée par 0,35 (exploration résiduelle).
+
+> Réglage du 19/11/2026 (avant : couverture fixe sur 15 cartes, c = 0,38, focus trié sur la moyenne brute). En simulation, le bonus d'exploration à 0,38 dépassait l'écart entre un centre aimé et un centre jamais vu : l'algorithme continuait à balayer en largeur malgré un intérêt net. Avec ce réglage, la première confirmation arrive ~9 cartes plus tôt (≈ 26 au lieu de ≈ 35) et la part de cartes sur les centres aimés double sur les 20 premières cartes. Pénalité de diversité 0,85 si même centre dominant, 4 % d'aléatoire.
 
 Pourquoi ce choix : l'échantillonnage par pure incertitude étale la preuve sur 30 domaines et ne confirme jamais rien ; l'exploitation pure surréagit à un seul swipe contradictoire. L'UCB garde un domaine prometteur dans le jeu après un mauvais tirage — c'est la différence entre apprendre et surréagir.
 
-Les domaines **confirmés ou rejetés sortent du tirage** : plus de cartes dessus.
+**Intérêt découvert = approfondissement** (décision du 19/11/2026). Un domaine **confirmé** reste dans le tirage avec une priorité fixe de 1, au-dessus de tout domaine ouvert : le deck creuse ce que le jeune aime au lieu de repartir en largeur. Son score est verrouillé ; les cartes jouées dessus s'ajoutent à ses preuves (`likedCards`) pour la restitution. La pénalité de diversité laisse passer des cartes d'exploration entre deux cartes d'approfondissement. Un domaine **rejeté** sort du tirage.
+
+En simulation (swipe adaptatif, 150 sessions par profil), la part des cartes sur les domaines aimés après la première confirmation passe de 1–16 % à 28–56 %, sans perte sur la découverte des autres intérêts.
 
 ### 3.7 Quand s'arrêter
 

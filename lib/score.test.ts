@@ -13,7 +13,7 @@ import {
   resolveConfirmation,
   topDomains,
 } from "./score";
-import { nextCard, nextTraitPair } from "./select";
+import { centerPriorities, nextCard, nextTraitPair } from "./select";
 import type { Profile, Response } from "./types";
 
 function mulberry32(seed: number) {
@@ -124,6 +124,26 @@ describe("scoring des intérêts", () => {
     expect(p.domains.manual.confirmed).toBe(true);
     expect(p.confirmed).toContain("manual");
     expect(p.domains.manual.mean).toBeGreaterThan(0.85);
+  });
+
+  it("intérêt découvert = approfondissement : le domaine confirmé reste prioritaire", () => {
+    let p = createProfile();
+    for (const id of ["reparer-velo", "bricoler", "reparer-scooter", "monter-meuble"]) {
+      p = swipe(p, id, "right");
+    }
+    p = resolveConfirmation(p, "manual", true);
+
+    for (const answered of [5, 20, 40]) {
+      const priorities = [...centerPriorities(p, answered).entries()].sort((a, b) => b[1] - a[1]);
+      expect(priorities[0][0]).toBe("manual");
+    }
+
+    // Les cartes jouées après la confirmation servent de preuves,
+    // sans bouger le score verrouillé.
+    const mean = p.domains.manual.mean;
+    p = swipe(p, "peindre-mur", "right");
+    expect(p.domains.manual.likedCards).toContain("peindre-mur");
+    expect(p.domains.manual.mean).toBeCloseTo(mean, 6);
   });
 
   it("un domaine fortement rejeté est marqué", () => {

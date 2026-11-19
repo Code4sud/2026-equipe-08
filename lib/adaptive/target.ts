@@ -196,7 +196,9 @@ function creuserPlan(
   // 1. Correspondance de mots entre la carte et les libellés ROME
   //    ("Gérer la caisse d'une asso" -> "Gérer une caisse").
   // 2. Puis les viviers de ses 2 centres principaux, en alternance.
-  const lexical = lexicalMatches(parent.text).filter((m) => !cov.macros.has(m.code));
+  const lexical = lexicalMatches(parent.text, 3, parent.centers).filter(
+    (m) => !cov.macros.has(m.code),
+  );
   if (lexical.length === 0 && !allowLoose) return null;
   const pools = [
     lexical,
@@ -263,23 +265,61 @@ function idf(): Map<string, number> {
 
 /** Seuil : environ un mot rare partagé avec le libellé, ou deux avec les compétences fines. */
 const LEXICAL_MIN = 4;
+/** Recouvrement minimal de centres pour accepter un lien faible (verbe, compétence fine). */
+const MIN_CENTER_OVERLAP = 0.2;
 
-/** Macros dont le libellé (×2) ou les compétences fines partagent des mots rares avec le texte. */
-export function lexicalMatches(text: string, limit = 3): Macro[] {
+/** Racines des infinitifs du texte (-er, -ir, -re, -oir) : des verbes, pas des objets. */
+const verbStems = (s: string) =>
+  new Set(
+    normalize(s)
+      .split(/[^a-z]+/)
+      .filter((w) => w.length >= 4 && /(er|ir|re|oir)$/.test(w))
+      .map((w) => w.slice(0, 5)),
+  );
+
+/** Recouvrement de deux vecteurs de centres (somme des minimums). */
+function centerOverlap(a: Card["centers"], b: Card["centers"]): number {
+  let total = 0;
+  for (const [id, w] of Object.entries(a)) total += Math.min(w ?? 0, b[id] ?? 0);
+  return total;
+}
+
+/**
+ * Macros dont le libellé (×2) ou les compétences fines partagent des mots rares avec le texte.
+ *
+ * Un verbe ou un mot de compétence fine ne prouve rien seul : « Aider un pote
+ * à réviser » partage « révis- » avec « Réaliser un diagnostic technique »
+ * (révision de véhicules), « Monter un meuble » partage « monte- » avec
+ * « Monter un dossier de financement ». Le lien est accepté si un NOM de la
+ * carte figure dans le libellé de la compétence (« caisse » → « Gérer une
+ * caisse »), sinon seulement si la compétence partage au moins un centre
+ * d'intérêt avec la carte (`centers`).
+ */
+export function lexicalMatches(
+  text: string,
+  limit = 3,
+  centers?: Card["centers"],
+): Macro[] {
   const wanted = new Set(stems(text));
   if (wanted.size === 0) return [];
+  const verbs = verbStems(text);
   const weights = idf();
   return swipeTargets()
     .map((m) => {
       const label = new Set(stems(m.label));
       const children = new Set(m.children.flatMap((c) => stems(c.label)));
       let score = 0;
+      let labelNounHit = false;
       for (const w of wanted) {
         const weight = weights.get(w) ?? 0;
-        if (label.has(w)) score += 2 * weight;
-        else if (children.has(w)) score += weight;
+        const hit = label.has(w) ? 2 * weight : children.has(w) ? weight : 0;
+        score += hit;
+        if (label.has(w) && !verbs.has(w) && weight > 0) labelNounHit = true;
       }
-      return { m, score };
+      const coherent =
+        labelNounHit ||
+        (centers !== undefined && centerOverlap(centers, m.centers) >= MIN_CENTER_OVERLAP);
+      return { m, score: coherent ? score : 0 };
     })
     .filter((x) => x.score >= LEXICAL_MIN)
     .sort((a, b) => b.score - a.score)

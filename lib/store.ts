@@ -4,6 +4,13 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { CARDS } from "../content/cards";
 import { PAIRS } from "../content/pairs";
+import {
+  pickCvFields,
+  type CvAnswers,
+  type CvField,
+  type Interview,
+  type QuestionSource,
+} from "./interview";
 import { createProfile, computeProfile, proposeConfirmation, resolveConfirmation } from "./score";
 import { nextCard, nextTraitPair } from "./select";
 import type {
@@ -46,6 +53,22 @@ type SessionState = {
   /** Cartes "déjà fait" pour lesquelles une carte creuser a déjà été demandée. */
   creuserAsked: string[];
 
+  /**
+   * Match de compétence : id de la carte « creuser » à laquelle le jeune vient
+   * de répondre « Oui, c'est moi » (vécu prouvé, relié à une compétence ROME).
+   */
+  skillMatch: string | null;
+  /** Cartes « creuser » qui ont déjà déclenché un match (une seule fois chacune). */
+  matchedSkills: string[];
+  /** Étape 2 : un entretien par expérience creusée. */
+  interviews: Interview[];
+  /** Entretien en cours (id de la carte « creuser »). */
+  activeInterview: string | null;
+  /** Réponses aux questions CV (quelques-unes à la fin de chaque entretien). */
+  cv: CvAnswers;
+  /** Questions CV que le jeune a passées : on ne les repose pas. */
+  cvSkipped: CvField[];
+
   ensureCard: () => void;
   ensurePair: () => void;
   swipeCard: (
@@ -65,6 +88,20 @@ type SessionState = {
   allCards: () => Card[];
   /** Demande la prochaine carte adaptative si la file est vide. */
   pump: () => Promise<void>;
+
+  /** « Continuer à swiper » sur l'écran de match. */
+  dismissSkillMatch: () => void;
+  /** « Creuser » : ouvre (ou reprend) l'entretien sur cette expérience. */
+  startInterview: (cardId: string) => void;
+  setInterviewQuestions: (cardId: string, questions: string[], source: QuestionSource) => void;
+  answerInterview: (cardId: string, index: number, answer: string) => void;
+  /** Écran courant de l'entretien (pour reprendre au même endroit). */
+  setInterviewStep: (cardId: string, step: number) => void;
+  finishInterview: (cardId: string) => void;
+  /** Quitter l'étape 2 sans finir : tout est gardé, on pourra reprendre. */
+  leaveInterview: () => void;
+  setCvAnswer: (field: CvField, answer: string) => void;
+  skipCv: (field: CvField) => void;
 };
 
 /** Le swipe adaptatif démarre après quelques cartes de la banque (zéro latence). */
@@ -143,7 +180,21 @@ const initialState = {
   failures: 0,
   awaitingExperience: false,
   creuserAsked: [] as string[],
+  skillMatch: null as string | null,
+  matchedSkills: [] as string[],
+  interviews: [] as Interview[],
+  activeInterview: null as string | null,
+  cv: {} as CvAnswers,
+  cvSkipped: [] as CvField[],
 };
+
+function updateInterview(
+  interviews: Interview[],
+  cardId: string,
+  patch: (interview: Interview) => Interview,
+): Interview[] {
+  return interviews.map((i) => (i.cardId === cardId ? patch(i) : i));
+}
 
 const isGenerated = (id: string) => id.startsWith("gen-");
 
@@ -292,11 +343,20 @@ export const useSession = create<SessionState>()(
         const awaitingExperience =
           direction === "right" && card.target?.mode !== "creuser" && !reason;
 
+        // « Oui, c'est moi » sur une carte creuser = compétence ROME prouvée : match.
+        const isSkillProof =
+          direction === "right" &&
+          card.target?.mode === "creuser" &&
+          !state.matchedSkills.includes(card.id);
+
         set({
           responses,
           currentCardId: next.id,
           queue: next.queue,
           pendingConfirmation: pending,
+          ...(isSkillProof
+            ? { skillMatch: card.id, matchedSkills: [...state.matchedSkills, card.id] }
+            : {}),
           lastResponse: { kind: "card", index: responses.length - 1 },
           startedAt: state.startedAt ?? Date.now(),
           awaitingExperience,
@@ -387,21 +447,108 @@ export const useSession = create<SessionState>()(
         set({ currentPairId: next?.id ?? null });
       },
 
+      dismissSkillMatch: () => set({ skillMatch: null }),
+
+      startInterview: (cardId) => {
+        const state = get();
+        const cards = get().allCards();
+        const proof = cards.find((c) => c.id === cardId);
+        if (!proof?.target) return;
+
+        if (!state.interviews.some((i) => i.cardId === cardId)) {
+          const parent = cards.find((c) => c.id === proof.target?.parentId);
+          const interview: Interview = {
+            cardId,
+            parentId: proof.target.parentId,
+            parentText: parent?.text ?? proof.text,
+            proofText: proof.text,
+            macro: proof.target.macro,
+            skill: proof.target.label,
+            questions: [],
+            answers: [],
+            // Les questions CV encore ouvertes et pas réservées par un autre récit en cours.
+            cvFields: pickCvFields(state.cv, [
+              ...state.cvSkipped,
+              ...state.interviews.filter((i) => !i.finishedAt).flatMap((i) => i.cvFields),
+            ]),
+            step: 0,
+            startedAt: Date.now(),
+          };
+          set({ interviews: [...state.interviews, interview] });
+        }
+        set({ activeInterview: cardId, skillMatch: null });
+      },
+
+      setInterviewQuestions: (cardId, questions, source) =>
+        set({
+          interviews: updateInterview(get().interviews, cardId, (i) =>
+            i.questions.length > 0
+              ? i
+              : { ...i, questions, questionSource: source, answers: questions.map(() => "") },
+          ),
+        }),
+
+      answerInterview: (cardId, index, answer) =>
+        set({
+          interviews: updateInterview(get().interviews, cardId, (i) => {
+            const answers = [...i.answers];
+            answers[index] = answer;
+            return { ...i, answers };
+          }),
+        }),
+
+      setInterviewStep: (cardId, step) =>
+        set({ interviews: updateInterview(get().interviews, cardId, (i) => ({ ...i, step })) }),
+
+      finishInterview: (cardId) =>
+        set({
+          interviews: updateInterview(get().interviews, cardId, (i) => ({
+            ...i,
+            finishedAt: i.finishedAt ?? Date.now(),
+          })),
+          activeInterview: null,
+        }),
+
+      leaveInterview: () => set({ activeInterview: null }),
+
+      setCvAnswer: (field, answer) => set({ cv: { ...get().cv, [field]: answer } }),
+
+      skipCv: (field) => {
+        const state = get();
+        if (state.cv[field]?.trim() || state.cvSkipped.includes(field)) return;
+        set({ cvSkipped: [...state.cvSkipped, field] });
+      },
+
       reset: () => {
         set({ ...initialState });
       },
     }),
     {
       name: "declic-session-v1",
-      version: 3,
-      // v1 -> v2 : ajout du swipe adaptatif.
-      migrate: (persisted) =>
-        ({
+      version: 5,
+      // v1 -> v2 : swipe adaptatif. v3 -> v4 : match de compétence + étape 2.
+      // v4 -> v5 : questions CV réparties entre les entretiens, reprise possible.
+      migrate: (persisted) => {
+        const state = {
           generated: [],
           queue: [],
           creuserAsked: [],
+          skillMatch: null,
+          matchedSkills: [],
+          interviews: [],
+          activeInterview: null,
+          cv: {},
+          cvSkipped: [],
           ...(persisted as object),
-        }) as unknown as SessionState,
+        } as unknown as SessionState & { cvDone?: boolean };
+        delete state.cvDone;
+        state.interviews = state.interviews.map((i) => ({
+          ...i,
+          cvFields: i.cvFields ?? [],
+          step: i.step ?? 0,
+        }));
+        return state;
+      },
       // Les champs transitoires ne sont jamais persistés.
       partialize: (state) => {
         const rest: Partial<SessionState> = { ...state };

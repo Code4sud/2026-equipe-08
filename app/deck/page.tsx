@@ -46,6 +46,12 @@ export default function DeckPage() {
   const generated = useSession((s) => s.generated);
   const awaitingExperience = useSession((s) => s.awaitingExperience);
   const answerExperience = useSession((s) => s.answerExperience);
+  const skillMatch = useSession((s) => s.skillMatch);
+  const dismissSkillMatch = useSession((s) => s.dismissSkillMatch);
+  const startInterview = useSession((s) => s.startInterview);
+  const interviews = useSession((s) => s.interviews);
+  // Récit commencé puis quitté : on peut le reprendre au même écran.
+  const unfinished = interviews.findLast((i) => !i.finishedAt && i.questions.length > 0);
 
   const shownAt = useRef(0);
 
@@ -78,12 +84,17 @@ export default function DeckPage() {
     lastResponse?.kind === "card" ? responses[lastResponse.index] : null;
   // Après un non : puces optionnelles. Après un oui : « déjà fait ? » (voir plus bas).
   const showReasons =
-    !pending && !awaitingExperience && lastCardResponse?.direction === "left";
+    !pending && !skillMatch && !awaitingExperience && lastCardResponse?.direction === "left";
   const lastCard = lastCardResponse
     ? allCards.find((c) => c.id === lastCardResponse.cardId)
     : null;
   const isCreuser = card?.target?.mode === "creuser";
-  const blocked = Boolean(pending) || awaitingExperience;
+  const blocked = Boolean(pending) || Boolean(skillMatch) || awaitingExperience;
+
+  const matchCard = skillMatch ? allCards.find((c) => c.id === skillMatch) : null;
+  const matchParent = matchCard?.target?.parentId
+    ? allCards.find((c) => c.id === matchCard.target?.parentId)
+    : null;
 
   const pendingCenter = pending ? CENTER_BY_ID[pending] : null;
   const pendingCards =
@@ -102,6 +113,11 @@ export default function DeckPage() {
   function goStyle() {
     startStyle();
     router.push("/style");
+  }
+
+  function goCreuser(cardId: string) {
+    startInterview(cardId);
+    router.push("/creuser");
   }
 
   if (!mounted) {
@@ -184,6 +200,11 @@ export default function DeckPage() {
           <SwipeCard
             key={card.id}
             card={card}
+            parentText={
+              card.target?.mode === "creuser"
+                ? allCards.find((c) => c.id === card.target?.parentId)?.text
+                : undefined
+            }
             tone={tone!}
             onSwipe={commit}
             disabled={blocked}
@@ -215,7 +236,8 @@ export default function DeckPage() {
             disabled={blocked}
             className="hard-shadow-sm flex h-16 items-center justify-center rounded-full border-2 border-ink bg-ink text-2xl text-paper transition-transform active:translate-y-0.5 active:shadow-none"
           >
-            ♥
+            {/* Carte creuser = question de vécu : ✓ (c'est fait), pas ♥ (ça me plaît). */}
+            {isCreuser ? "✓" : "♥"}
           </button>
         </div>
         )}
@@ -253,6 +275,15 @@ export default function DeckPage() {
           )}
         </AnimatePresence>
 
+        {unfinished && !blocked && !showReasons && (
+          <button
+            onClick={() => goCreuser(unfinished.cardId)}
+            className="mt-3 w-full truncate rounded-full bg-mint px-4 py-2.5 text-center text-xs font-bold text-ink"
+          >
+            Reprendre ton récit : « {unfinished.parentText} » →
+          </button>
+        )}
+
         {responses.length >= 20 && (
           <button
             onClick={goStyle}
@@ -264,7 +295,21 @@ export default function DeckPage() {
       </div>
 
       <AnimatePresence>
-        {pendingCenter && !awaitingExperience && (
+        {matchCard?.target && (
+          <SkillMatchOverlay
+            key="skill-match"
+            skill={matchCard.target.label}
+            parentText={matchParent?.text}
+            proofText={matchCard.text}
+            emoji={matchCard.emoji}
+            onCreuser={() => goCreuser(matchCard.id)}
+            onContinue={dismissSkillMatch}
+          />
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {pendingCenter && !skillMatch && !awaitingExperience && (
           <ConfirmationOverlay
             title={pendingCenter.short}
             label={pendingCenter.label}
@@ -334,11 +379,14 @@ function Header({
 
 function SwipeCard({
   card,
+  parentText,
   tone,
   onSwipe,
   disabled,
 }: {
   card: Card;
+  /** Texte de la carte parente (cartes « creuser ») : rappel de contexte. */
+  parentText?: string;
   tone: { bg: string; ink: string };
   onSwipe: (direction: SwipeDirection) => void;
   disabled: boolean;
@@ -394,6 +442,13 @@ function SwipeCard({
           Oui
         </motion.span>
 
+        {parentText && (
+          <p className="max-w-full rounded-2xl border-2 border-current/20 bg-paper/55 px-3 py-1.5 text-xs font-semibold leading-snug opacity-90">
+            <span className="opacity-60">Tu as dit déjà fait : </span>
+            <span className="line-clamp-2">« {parentText} »</span>
+          </p>
+        )}
+
         <div className="grid h-24 w-24 shrink-0 place-items-center rounded-full border-2 border-ink/10 bg-paper/55 text-5xl shadow-inner">
           {card.emoji}
         </div>
@@ -402,7 +457,7 @@ function SwipeCard({
           <p className="text-2xl font-black leading-[1.05] tracking-[-0.03em] sm:text-3xl">
             {card.text}
           </p>
-          {card.hint && (
+          {card.hint && !(parentText && card.hint.startsWith("Quand tu as fait")) && (
             <p className="mt-3 text-sm font-medium opacity-60">{card.hint}</p>
           )}
         </div>
@@ -484,6 +539,97 @@ function ConfirmationOverlay({
               className="rounded-full border border-ink/25 px-5 py-3 text-sm font-semibold text-ink/60"
             >
               Pas vraiment
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/**
+ * Match de compétence : le jeune a dit « déjà fait », puis « oui, c'est moi »
+ * sur la question qui creuse ce vécu. On lui montre la compétence ROME
+ * prouvée et on lui propose d'en parler (étape 2), sans l'y obliger.
+ */
+function SkillMatchOverlay({
+  skill,
+  parentText,
+  proofText,
+  emoji,
+  onCreuser,
+  onContinue,
+}: {
+  skill: string;
+  parentText?: string;
+  proofText: string;
+  emoji?: string;
+  onCreuser: () => void;
+  onContinue: () => void;
+}) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-end justify-center bg-ink/70 p-4 backdrop-blur-sm sm:items-center"
+    >
+      <motion.div
+        initial={{ y: 60, scale: 0.96 }}
+        animate={{ y: 0, scale: 1 }}
+        exit={{ y: 40, scale: 0.97 }}
+        transition={{ type: "spring", stiffness: 300, damping: 26 }}
+        className="w-full max-w-md overflow-hidden rounded-[30px] border-2 border-ink bg-paper"
+      >
+        <div className="bg-mint px-6 pb-5 pt-6">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-ink/60">
+              C&apos;est un match
+            </p>
+            {emoji && <span className="text-2xl">{emoji}</span>}
+          </div>
+          <p className="mt-3 text-xs font-bold uppercase tracking-widest text-ink/50">
+            Compétence repérée
+          </p>
+          <h2 className="mt-1 text-2xl font-black leading-tight tracking-tight">
+            {skill}
+          </h2>
+        </div>
+
+        <div className="px-6 py-5">
+          <p className="text-xs font-bold uppercase tracking-widest text-ink/40">
+            Ce qui le prouve
+          </p>
+          <ul className="mt-3 space-y-2">
+            {parentText && (
+              <li className="flex items-start gap-2 text-sm font-medium text-ink/75">
+                <span className="mt-0.5 text-accent">✓</span>
+                <span>Déjà fait : « {parentText} »</span>
+              </li>
+            )}
+            <li className="flex items-start gap-2 text-sm font-medium text-ink/75">
+              <span className="mt-0.5 text-accent">✓</span>
+              <span>Oui, c&apos;est toi : « {proofText} »</span>
+            </li>
+          </ul>
+
+          <p className="mt-5 text-xs leading-relaxed text-ink/45">
+            Raconte-nous comment ça s&apos;est passé : 2 minutes, à l&apos;écrit
+            ou à voix haute. On s&apos;en sert pour écrire ton CV.
+          </p>
+
+          <div className="mt-5 grid gap-2">
+            <button
+              onClick={onCreuser}
+              className="hard-shadow-sm rounded-full border-2 border-ink bg-ink px-5 py-3.5 text-sm font-bold text-paper"
+            >
+              Creuser →
+            </button>
+            <button
+              onClick={onContinue}
+              className="rounded-full border border-ink/25 px-5 py-3 text-sm font-semibold text-ink/60"
+            >
+              Continuer à swiper
             </button>
           </div>
         </div>

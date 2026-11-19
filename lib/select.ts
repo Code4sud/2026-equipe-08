@@ -25,13 +25,15 @@ export function dominantCenter(card: Card): CenterId {
 /**
  * Politique de sélection en deux temps :
  *
- * 1. Couverture (cartes 1–15) : on va chercher les domaines jamais vus.
- * 2. UCB (cartes 16+) : on sonde le domaine qui a le meilleur score
+ * 1. Couverture (≤ 12 cartes, moins dès qu'un intérêt se dessine) :
+ *    on va chercher les domaines jamais vus.
+ * 2. UCB ensuite : on sonde le domaine qui a le meilleur score
  *    "moyenne + bonus d'incertitude". Le bonus empêche qu'un seul swipe
  *    contradictoire fasse abandonner un domaine prometteur — c'est ce qui
  *    distingue un algorithme qui apprend d'un algorithme qui surréagit.
  *
- * Un domaine confirmé ou rejeté sort du tirage : plus de cartes dessus.
+ * Intérêt découvert = approfondissement : un domaine confirmé reste dans le
+ * tirage en priorité haute (`DEEPEN_PRIORITY`). Un domaine rejeté en sort.
  */
 export function nextCard(
   profile: Profile,
@@ -52,7 +54,7 @@ export function nextCard(
       .map(dominantCenter),
   );
 
-  const phase1 = responses.length < 15;
+  const phase1 = isCoveragePhase(profile, responses.length);
   const priorities = centerPriorities(profile, responses.length);
 
   let best: Card | null = null;
@@ -104,17 +106,61 @@ export function nextCard(
   );
 }
 
+/** Longueur maximale de la phase de couverture. */
+const COVERAGE_MAX = 12;
+/** Constante d'exploration UCB. */
+const UCB_C = 0.10;
+/** En dessous de ce nEff, un domaine n'a pas encore de moyenne fiable. */
+const FOCUS_MIN_NEFF = 1;
+/** Rang de focus d'un domaine pas encore assez vu : derrière tout domaine aimé. */
+const UNKNOWN_FOCUS_MEAN = 0.45;
+/**
+ * Priorité d'un domaine confirmé : au-dessus de tout domaine ouvert, pour
+ * l'approfondir. La pénalité de diversité (même domaine que les cartes
+ * précédentes) laisse passer une carte d'exploration de temps en temps.
+ */
+const DEEPEN_PRIORITY = 1;
+
+/**
+ * Un signal net : un domaine ouvert avec au moins 2 cartes aimées
+ * et une moyenne qui monte.
+ */
+function hasStrongSignal(profile: Profile): boolean {
+  return CENTER_IDS.some((id) => {
+    const d = profile.domains[id];
+    return (
+      !d.rejected &&
+      (d.confirmed || (d.likedCards.length >= 2 && d.mean >= 0.6))
+    );
+  });
+}
+
+/**
+ * La couverture dure au plus `COVERAGE_MAX` cartes, et s'arrête plus tôt
+ * dès qu'un intérêt se dessine : inutile de finir le tour des 30 domaines
+ * avant de creuser ce que le jeune aime déjà.
+ */
+export function isCoveragePhase(profile: Profile, answered: number): boolean {
+  return answered < COVERAGE_MAX && !hasStrongSignal(profile);
+}
+
 /**
  * Priorité de sondage de chaque domaine encore ouvert.
- * Phase 1 (< 15 réponses) : couverture. Ensuite : UCB resserré sur le focus.
+ * Phase 1 (couverture) : domaines jamais vus d'abord, nuancé par la moyenne.
+ * Ensuite : UCB resserré sur le focus.
  * Partagé par le deck fixe (`nextCard`) et le swipe adaptatif (`pickTarget`).
  */
 export function centerPriorities(
   profile: Profile,
   answered: number,
 ): Map<CenterId, number> {
-  const phase1 = answered < 15;
+  const phase1 = isCoveragePhase(profile, answered);
   const priorities = new Map<CenterId, number>();
+
+  // Intérêt découvert = approfondissement.
+  for (const id of CENTER_IDS) {
+    if (profile.domains[id].confirmed) priorities.set(id, DEEPEN_PRIORITY);
+  }
 
   const active = CENTER_IDS.filter((id) => {
     const d = profile.domains[id];
@@ -124,28 +170,40 @@ export function centerPriorities(
   // Le set de focus se resserre : 30 -> 12 -> 6 domaines.
   // C'est le comportement "Tinder" : plus on apprend, plus on montre
   // ce qui ressemble au profil, sans jamais couper l'exploration.
-  const focusSize = answered < 15 ? 30 : answered < 25 ? 12 : 6;
+  // Un domaine à peine vu garde sa moyenne a priori (0,5) : on le classe
+  // derrière les domaines aimés, sinon il squatterait le focus.
+  const focusSize = phase1 ? 30 : answered < 25 ? 12 : 6;
+  const focusRank = (id: CenterId) => {
+    const d = profile.domains[id];
+    return d.nEff >= FOCUS_MIN_NEFF ? d.mean : Math.min(d.mean, UNKNOWN_FOCUS_MEAN);
+  };
   const focus = new Set(
-    [...active]
-      .sort((a, b) => profile.domains[b].mean - profile.domains[a].mean)
-      .slice(0, focusSize),
+    [...active].sort((a, b) => focusRank(b) - focusRank(a)).slice(0, focusSize),
   );
 
   for (const id of active) {
     const domain = profile.domains[id];
 
     if (phase1) {
-      // Couverture : les domaines jamais vus passent devant.
-      priorities.set(id, (domain.nEff < 0.6 ? 2 : 0) + (1 - domain.confidence));
+      // Couverture : les domaines jamais vus passent devant, mais un domaine
+      // aimé n'est plus pénalisé par rapport à un domaine rejeté.
+      priorities.set(
+        id,
+        (domain.nEff < 0.6 ? 2 : 0) +
+          (1 - domain.confidence) +
+          1.5 * (domain.mean - 0.5),
+      );
       continue;
     }
 
-    // UCB : exploitation de la moyenne + exploration des domaines
-    // encore incertains. c = 0,38 règle le compromis.
+    // UCB : exploitation de la moyenne + exploration des domaines encore
+    // incertains. c = 0,10 : le bonus reste inférieur à l'écart entre un
+    // domaine aimé et un domaine neutre. Un domaine à peine vu est exploité
+    // sur un a priori prudent (la plupart des domaines ne plaisent pas).
     const bonus =
-      0.38 * Math.sqrt(Math.log(answered + 2) / (domain.nEff + 0.5));
+      UCB_C * Math.sqrt(Math.log(answered + 2) / (domain.nEff + 0.5));
 
-    priorities.set(id, (domain.mean + bonus) * (focus.has(id) ? 1 : 0.35));
+    priorities.set(id, (focusRank(id) + bonus) * (focus.has(id) ? 1 : 0.35));
   }
 
   return priorities;

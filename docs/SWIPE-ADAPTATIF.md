@@ -122,6 +122,29 @@ Les cartes générées gardent leur cible dans `card.target` (`macro`, `label`, 
 
 Le quiz part des cartes `vecu`, d'abord les cartes creuser.
 
+## Étape 2 — Match de compétence et « Creuser » (19/11/2026)
+
+**Déclencheur : preuve de compétence ROME = match.** Un « Oui, c'est moi » sur une carte « On creuse un peu » (le jeune a dit « déjà fait », puis confirmé un vécu précis relié à une compétence ROME) ouvre l'écran **« C'est un match »** : la compétence ROME, ce qui la prouve, et deux boutons.
+
+- **Creuser** → `/creuser` (étape 2).
+- **Continuer à swiper** → retour au deck ; chaque carte creuser ne déclenche qu'un match.
+
+Le match passe avant la confirmation de domaine (« Match confirmé ? »), qui s'affiche ensuite si elle est en attente.
+
+**Étape 2 (`/creuser`)** : une question ouverte par écran, réponse écrite ou dictée.
+
+| | |
+|---|---|
+| Questions sur le projet | 4, **uniquement sur cette expérience** : contexte → ce qu'il a fait → difficulté → résultat. Écrites par le LLM (`/api/questions`, `lib/interviewQuestions.ts`) à partir des **textes des deux cartes et de la compétence ROME** ; jamais une réponse du jeune n'est envoyée au LLM. Sans LLM : questions de repli (`fallbackQuestions`). Mesuré avec `claude -p` : 5 à 8 s, puis cache. |
+| Questions CV | À la toute fin, **une seule fois par session** : prénom (facultatif), âge, ville + code postal, niveau d'études, situation, petits boulots / stages / bénévolat, permis, mobilité. Réponses rapides en un tap pour les champs à choix. Toutes facultatives. |
+| Dictée | Whisper (`onnx-community/whisper-base`, q8, ~75 Mo) dans un Web Worker via `@huggingface/transformers` : **le son ne quitte pas l'appareil**. Le modèle est téléchargé du Hub au premier usage puis mis en cache par le navigateur. Mesuré (Edge, sans GPU) : 1re dictée 5 à 10 s modèle compris, puis ~3 s pour 6 s de parole. whisper-small transcrit parfaitement mais pèse 240 Mo et est ~6× plus lent. |
+| Stockage | `localStorage` uniquement (`interviews`, `cv` dans `declic-session-v1`). |
+
+**Sortie pour l'étape 3 (CV)** : l'export JSON de `/result` contient maintenant :
+
+- `user` : les champs `user` du contrat d'entrée de `docs/DOSSIER.md` (`toDossierUser`) ; chaque expérience racontée y devient une entrée `experience` avec sa compétence ROME dans `competences`. Les réponses libres qui ne rentrent dans aucun champ restent dans `user.raw`.
+- `interviews[]` : compétence ROME (`skill.code`, `skill.label`), preuve (carte d'origine + question de vécu), questions et réponses.
+
 ## Limites connues et suite
 
 1. **Mode `api` à brancher** (SDK Anthropic + `ANTHROPIC_API_KEY`) pour la démo sur Vercel : `claude -p` ne tourne qu'en local.
