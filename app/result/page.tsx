@@ -6,6 +6,7 @@ import { CARDS } from "../../content/cards";
 import { JOBS } from "../../lib/jobs";
 import { DEMO } from "../../lib/demo";
 import { CENTER_BY_ID, CENTER_IDS } from "../../lib/centers";
+import { toDossierUser } from "../../lib/interview";
 import { buildDirections, matchJobs, profileHeadline } from "../../lib/match";
 import {
   RIASEC_COLOR,
@@ -28,6 +29,8 @@ export default function ResultPage() {
 
   const responses = useSession((s) => s.responses);
   const generated = useSession((s) => s.generated);
+  const interviews = useSession((s) => s.interviews);
+  const cv = useSession((s) => s.cv);
 
   const realProfile = useSession.getState().getProfile();
 
@@ -69,6 +72,16 @@ export default function ResultPage() {
         ),
         traits: profile.traits,
       },
+      // Étape 2 (« Creuser ») : champs `user` du contrat docs/DOSSIER.md,
+      // expériences racontées comprises (compétences ROME prouvées).
+      user: toDossierUser(cv, interviews),
+      interviews: interviews.map((i) => ({
+        skill: { code: i.macro, label: i.skill },
+        proof: { parent: i.parentText, question: i.proofText },
+        questionSource: i.questionSource,
+        qa: i.questions.map((question, k) => ({ question, answer: i.answers[k] ?? "" })),
+        finished: Boolean(i.finishedAt),
+      })),
       directions: directions.map((d) => ({
         center: d.centerId,
         title: d.title,

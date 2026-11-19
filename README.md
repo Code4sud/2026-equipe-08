@@ -30,6 +30,7 @@ Routes :
 |---|---|
 | `/` | accueil |
 | `/deck` | swipe des intérêts + confirmations |
+| `/creuser` | étape 2 : questions ouvertes sur une expérience prouvée + infos CV, dictée vocale locale |
 | `/style` | 15 paires de style de travail |
 | `/result` | restitution, 3 directions, export |
 
@@ -111,12 +112,12 @@ jamais essayé / barrière d'accès → aucun update
 ### 2. Confirmation — le jeune verrouille
 
 Un domaine devient proposable à `moyenne ≥ 0,72`, `lower80 ≥ 0,60`, `nEff ≥ 3,5`, `≥ 4 cartes likées`.
-L'app affiche alors une carte de confirmation avec les preuves. **Oui** verrouille et retire le domaine du deck ; **pas vraiment** le remet au prior et l'écarte.
+L'app affiche alors une carte de confirmation avec les preuves. **Oui** verrouille le domaine et le passe en **approfondissement** (il reste prioritaire dans le deck) ; **pas vraiment** le remet au prior et l'écarte.
 
 ### 3. Sélection — couverture puis UCB
 
-- Cartes 1–15 : couverture des domaines jamais vus.
-- Cartes 16+ : `priorité = moyenne + 0,38·sqrt(log(n+2)/(nEff+0,5))`, focus 30 → 12 → 6 domaines, 35 % d'exploration hors focus.
+- Couverture des domaines jamais vus : 12 cartes maximum, arrêtée dès qu'un domaine a ≥ 2 cartes aimées et une moyenne ≥ 0,6.
+- Ensuite : `priorité = moyenne' + 0,10·sqrt(log(n+2)/(nEff+0,5))`, où `moyenne'` est plafonnée à 0,45 tant que `nEff < 1` ; focus 30 → 12 → 6 domaines (domaines à peine vus derrière les domaines aimés), 35 % d'exploration hors focus.
 - Plafond dur : 48 cartes. Cible : 35.
 
 ### 4. Style de travail — 5 spectres

@@ -3,7 +3,7 @@ import { CARDS } from "../../content/cards";
 import { applyResponse, computeProfile, createProfile } from "../score";
 import type { Card, Response } from "../types";
 import { getMacro, isSwipeTarget, poolFor } from "./skills";
-import { buildCard, cardCenters, coverage, pickTarget, statusOf } from "./target";
+import { buildCard, cardCenters, coverage, lexicalMatches, pickTarget, statusOf } from "./target";
 import { pregenCard, pregenCount } from "./pregen";
 import { buildCardPrompt, matchesMode, templateDraft } from "./writer";
 
@@ -105,6 +105,25 @@ describe("choix de la cible", () => {
     const plan = pickTarget({ profile, responses, cards: CARDS, rand: mulberry32(2) })!;
     expect(plan.candidates[0].label).toBe("Gérer une caisse");
     expect(plan.loose).toBe(false);
+  });
+
+  it("un verbe partagé ne suffit pas à relier une carte à une compétence d'un autre domaine", () => {
+    const card = (id: string) => CARDS.find((c) => c.id === id)!;
+    const labels = (id: string) =>
+      lexicalMatches(card(id).text, 3, card(id).centers).map((m) => m.label);
+
+    // « réviser » ≠ « révision » d'un véhicule
+    expect(labels("aider-reviser")).not.toContain("Réaliser un diagnostic technique");
+    // « monter un meuble » ≠ « monter un dossier de financement »
+    expect(labels("monter-meuble").some((l) => l.includes("financement"))).toBe(false);
+    // Un nom partagé dans le libellé reste un lien fort.
+    expect(labels("caisse-asso")[0]).toBe("Gérer une caisse");
+    expect(labels("reparer-velo")[0]).toBe("Réparer un équipement, une machine, une installation");
+
+    const responses = [r("aider-reviser", "right", "deja-souvent")];
+    const profile = computeProfile(responses, [], CARDS);
+    const plan = pickTarget({ profile, responses, cards: CARDS, rand: mulberry32(2), allowLoose: false })!;
+    expect(plan.mode).toBe("explorer");
   });
 
   it("sans LLM, ne creuse pas une carte qu'aucun mot ne relie à ROME", () => {
@@ -228,6 +247,17 @@ describe("explorer personnalisé", () => {
     expect(prompt).toContain("Réparer un vélo crevé");
     expect(prompt).toContain("Ça ne lui parle pas");
     expect(prompt).toContain("prolonge le mieux ce que le jeune aime");
+  });
+
+  it("le prompt creuser contient la carte parente et la consigne d'autonomie", () => {
+    const responses = [r("reparer-velo", "right", "deja-souvent")];
+    const profile = computeProfile(responses, [], CARDS);
+    const plan = pickTarget({ profile, responses, cards: CARDS, rand: mulberry32(4) })!;
+    expect(plan.mode).toBe("creuser");
+    const prompt = buildCardPrompt(plan, { recent: [], liked: [], disliked: [] });
+    expect(prompt).toContain("Carte parente");
+    expect(prompt).toContain(plan.parent!.text);
+    expect(prompt).toContain("se comprendre seule");
   });
 });
 

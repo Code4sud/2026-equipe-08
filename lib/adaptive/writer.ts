@@ -93,13 +93,14 @@ export const CARD_SYSTEM_PROMPT = `Tu écris les cartes de Déclic, un jeu de sw
 
 - Mode "explorer" : l'écran demande « Ça te tente ? ». La carte est UNE ACTIVITÉ à l'infinitif, qu'on peut avoir envie de faire même sans l'avoir jamais faite ("Fixer les prix pour une vente de gâteaux"). JAMAIS de question, JAMAIS "déjà" : on mesure l'envie, pas l'expérience (beaucoup n'ont jamais eu l'occasion d'essayer).
 - Mode "creuser" : l'écran demande « C'est toi ? ». Le jeune vient de dire qu'il a DÉJÀ fait la carte parente. La carte est UNE QUESTION fermée sur ce même vécu, plus précise, à laquelle on répond oui ou non ("Et c'est toi qui fixais les prix ?", "T'as déjà dû gérer un client pas content ?").
+  La question doit se comprendre SEULE : l'écran affiche bien un rappel de la carte parente, mais le jeune a pu changer de sujet entre-temps. Nomme l'objet ou l'activité de la carte parente (la plateforme, le vélo, le planning…) dans la question. Interdit : pronom ou référence qui suppose la carte précédente ("la commande d'après", "ça", "cette fois", "le même", "aussi", "encore"). Mauvais : "T'es retourné chez le même vendeur ?" ; bon : "Sur Vinted, t'as déjà revendu à quelqu'un qui t'avait déjà acheté ?".
 
 On te donne une compétence du répertoire ROME (France Travail). Tu écris UNE carte qui fait reconnaître cette compétence dans une situation vécue hors travail : entre potes, au quartier, en ligne, dans une asso, au sport, dans un petit job.
 
 Règles :
-- "text" : 4 à 12 mots, registre parlé, tutoiement. Pas de jargon ROME, pas d'intitulé de métier.
+- "text" : 4 à 12 mots (jusqu'à 14 en mode creuser, si c'est nécessaire pour nommer l'objet de la carte parente), registre parlé, tutoiement. Pas de jargon ROME, pas d'intitulé de métier.
 - Jamais d'étiquette ("tu es manuel", "tu es organisé") : une situation concrète.
-- "hint" : facultatif, 3 à 10 mots, rassurant ("même une fois", "même sans t'en rendre compte").
+- "hint" : facultatif, 3 à 10 mots, rassurant ("même une fois", "même sans t'en rendre compte"). En mode creuser, ne paraphrase pas la carte parente : l'écran la rappelle déjà.
 - "emoji" : un seul emoji, sans visage ni personne.
 - Interdit : la santé, le handicap, l'origine, le pays, la religion, la famille du jeune (parents, frères, sœurs), son argent, sa situation administrative, la politique, la sexualité. Pour parler d'enfants, dis "des plus petits" ou "des enfants", jamais "ton petit frère".
 - Ne répète pas une situation déjà montrée.
@@ -139,6 +140,9 @@ export function buildCardPrompt(plan: TargetPlan, ctx: CardContext): string {
   const lines: string[] = [`Mode : ${plan.mode}`];
 
   if (plan.parent) lines.push(`Carte parente (le jeune a dit "déjà fait") : « ${plan.parent.text} »`);
+  if (plan.parent && plan.mode === "creuser") {
+    lines.push("La question doit se comprendre seule : nomme l'objet ou l'activité de la carte parente, sans pronom ni référence à une carte précédente.");
+  }
 
   if (plan.candidates.length === 1) {
     const m = plan.candidates[0];

@@ -126,7 +126,15 @@ export function applyResponse(
     number,
   ][]) {
     const domain = next.domains[centerId];
-    if (!domain || domain.confirmed || domain.rejected) continue;
+    if (!domain || domain.rejected) continue;
+
+    // Domaine confirmé (en approfondissement) : le score est verrouillé,
+    // mais les cartes jouées restent des preuves pour la restitution.
+    if (domain.confirmed) {
+      const list = response.direction === "right" ? domain.likedCards : domain.dislikedCards;
+      if (!list.includes(card.id)) list.push(card.id);
+      continue;
+    }
 
     const evidence = weight * strength;
     if (response.direction === "right") {
