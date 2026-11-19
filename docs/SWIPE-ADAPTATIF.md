@@ -47,6 +47,9 @@ banque fixe ──► swipe ──► état (réponses + cartes générées)
 | 18 | **Intérêt et vécu séparés.** Carte explorer = une *activité* sous « Ça te tente ? » (jamais de question, jamais « déjà » ; une relance au LLM sinon). Carte creuser = une *question de vécu* sous « C'est toi ? » ; sa réponse ne touche **pas** au score d'intérêt, elle marque seulement la compétence « vécu » ou non. | Sinon « non, jamais fait » était compté comme « pas intéressé », ce qui pénalise exactement le public visé (pas eu l'occasion d'essayer). |
 | 19 | **« Tu l'as déjà fait ? » après chaque oui** sur une carte d'intérêt : deux gros boutons, *Pas encore* / *Oui, déjà fait*, la carte suivante s'efface en attendant. | C'est le déclencheur du mode creuser : en puce optionnelle, il ne se serait presque jamais vu. Un tap de plus par oui, assumé. |
 | 20 | **Une carte creuser est demandée dès le « déjà fait »**, même si une carte explorer attend déjà en file, et passe devant. | Mesuré avec `claude -p` : la carte creuser arrive ~2 cartes après le « déjà fait ». |
+| 21 | **Explorer personnalisé.** Le code choisit le centre (UCB) et **3 compétences** de son vivier (enjeux variés) ; le LLM reçoit les cartes **aimées** et **pas aimées** (textes de cartes uniquement) et choisit la compétence qui prolonge le mieux ses goûts. Le serveur vérifie que le code renvoyé est dans la liste. | Le domaine reste piloté par le score ; la situation colle au jeune. Mesuré : même domaine, mêmes 3 compétences → « Retaper un vieux vélo pour le revendre » (profil foot/vente), « Monter toi-même ton PC » (jeux vidéo), « Monter des niches pour un refuge » (animaux). |
+| 22 | **217 cartes explorer pré-écrites** (`npm run pregen:cards`, ~70 s avec `claude -p`), dédoublonnées entre elles et contre la banque fixe (≥ 60 % de mots communs = doublon). Utilisées quand aucun LLM n'est là (mode mock, Vercel sans clé, LLM en échec). | Plus jamais de libellé ROME brut à l'écran. La démo tient sans IA. |
+| 23 | **Sans LLM, pas de « creuser » sur une carte générée** (la suite serait en jargon ROME) ; « creuser » une carte de la banque reliée par les mots affiche l'activité pré-écrite sous « C'est toi ? ». | Mieux vaut explorer que montrer une suite illisible. |
 
 ## Fichiers
 
@@ -55,7 +58,9 @@ banque fixe ──► swipe ──► état (réponses + cartes générées)
 | `scripts/build-skills.mjs` → `data/rome/skills.json` | Référentiel compacté : macros, arborescence, compétences fines, vecteurs de centres, viviers par centre. |
 | `lib/adaptive/skills.ts` | Accès au référentiel (serveur uniquement, ~430 Ko). |
 | `lib/adaptive/target.ts` | Couverture, choix de la cible, construction de la carte. Pur, testé. |
-| `lib/adaptive/writer.ts` | Prompt, garde-fous, repli sans LLM. |
+| `lib/adaptive/writer.ts` | Prompt (goûts du jeune, 3 candidates), contrôles de forme, repli sans LLM. |
+| `lib/adaptive/pregen.ts` + `data/rome/explorer-cards.json` | 217 cartes explorer pré-écrites. |
+| `scripts/pregen-cards.ts` | Génération par lots (8 compétences × 4 en parallèle), incrémentale, dédoublonnée. |
 | `lib/llm/` | `completeJson()` + backend `claude -p`. |
 | `app/api/card/route.ts` | `POST /api/card`. |
 | `lib/store.ts` | File de cartes générées, `pump()`, alternance. |
@@ -66,6 +71,7 @@ banque fixe ──► swipe ──► état (réponses + cartes générées)
 
 ```bash
 npm run build:skills           # seulement si le dump ROME change
+npm run pregen:cards           # réécrit les cartes explorer manquantes (claude -p ; --force pour tout réécrire)
 npm run dev                    # mode mock : cartes construites depuis ROME, sans LLM
 ```
 
@@ -120,6 +126,6 @@ Le quiz part des cartes `vecu`, d'abord les cartes creuser.
 
 1. **Mode `api` à brancher** (SDK Anthropic + `ANTHROPIC_API_KEY`) pour la démo sur Vercel : `claude -p` ne tourne qu'en local.
 2. **Lien carte de la banque ↔ ROME** : la correspondance de mots est une heuristique (bonne sur « caisse », « réparer », « animaux », vide sur « énigmes », « karting »). Prochaine amélioration à fort impact : **curer à la main 1 à 3 macros par carte de la banque** (~90 cartes).
-3. **Textes du repli sans LLM** = libellés ROME bruts (« Réguler, superviser le trafic d'un réseau de transport »). Acceptable en dev, pas en démo : la démo tourne avec le LLM, ou avec un lot de cartes pré-écrites.
-4. **Pré-génération** : écrire une fois, avec le LLM, la carte explorer de chacune des 224 cibles et la versionner. Les cartes explorer deviennent instantanées et marchent sans LLM ; seules les cartes creuser restent générées à la volée.
+3. ~~Textes du repli sans LLM~~ et ~~pré-génération~~ : faits (décisions 22-23). Reste : les cartes « creuser » sans LLM n'existent que pour les cartes de la banque reliées par les mots.
+4. **En mode `cli`, les cartes explorer restent écrites à la volée** (personnalisées, ~5 s). Option si la latence gêne en démo : servir la carte pré-écrite tout de suite et ne garder le LLM que pour « creuser ».
 5. **Prompts à régler** sur de vraies sessions (longueur, registre, variété des emojis).

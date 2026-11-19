@@ -89,22 +89,38 @@ export async function POST(request: Request) {
   let plan = pickTarget({ profile, responses, cards, allowLoose: backend !== "mock" });
   if (!plan) return Response.json({ card: null, backend });
 
+  // Contexte pour le LLM : uniquement des textes de cartes (pas de texte libre).
   const cardById = new Map(cards.map((c) => [c.id, c]));
-  const recentTexts = responses
-    .slice(-8)
-    .map((r) => cardById.get(r.cardId)?.text)
-    .filter((t): t is string => Boolean(t));
+  const textOf = (r: (typeof responses)[number]) => cardById.get(r.cardId)?.text;
+  const isInterest = (r: (typeof responses)[number]) =>
+    cardById.get(r.cardId)?.target?.mode !== "creuser";
+  const ctx = {
+    recent: responses.slice(-8).map(textOf).filter((t): t is string => Boolean(t)),
+    liked: responses
+      .filter((r) => r.direction === "right" && isInterest(r))
+      .slice(-6)
+      .reverse()
+      .map(textOf)
+      .filter((t): t is string => Boolean(t)),
+    disliked: responses
+      .filter((r) => r.direction === "left" && isInterest(r) && (!r.reason || r.reason === "pas-mon-truc"))
+      .slice(-4)
+      .map(textOf)
+      .filter((t): t is string => Boolean(t)),
+  };
 
+  // Le cache tient compte des goûts : deux jeunes différents n'ont pas la même carte.
   const key = [
     plan.mode,
     plan.candidates.map((m) => m.code).join(","),
     plan.focus ?? "",
     plan.parent?.text ?? "",
+    plan.mode === "explorer" ? ctx.liked.join("/") : "",
   ].join("|");
 
   let written = cache.get(key);
   if (!written) {
-    written = await writeCard(plan, recentTexts);
+    written = await writeCard(plan, ctx);
     if (written.source === "generated") {
       if (cache.size >= CACHE_MAX) cache.delete(cache.keys().next().value!);
       cache.set(key, written);

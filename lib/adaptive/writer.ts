@@ -1,14 +1,16 @@
 import { z } from "zod";
 import { completeJson } from "../llm";
 import type { CardSource } from "../types";
+import { pregenCard } from "./pregen";
 import type { Macro } from "./skills";
 import type { CardDraft, TargetPlan } from "./target";
 
 /**
- * Écriture du texte d'une carte. Le LLM reçoit UNIQUEMENT la cible ROME et
- * les textes des cartes déjà montrées : aucune donnée personnelle du jeune.
- * Si le LLM échoue ou sort du cadre, on retombe sur un texte construit
- * depuis le libellé ROME (source "template").
+ * Écriture du texte d'une carte. Le LLM reçoit la cible ROME et les textes
+ * des cartes déjà montrées (aimées / pas aimées) : jamais de texte libre du
+ * jeune. Si le LLM échoue ou sort du cadre, on retombe sur la carte
+ * pré-écrite de la compétence, ou à défaut sur son libellé ROME
+ * (source "template").
  */
 
 // ---------------------------------------------------------------------------
@@ -56,7 +58,17 @@ const DOMAIN_EMOJI: Record<string, string> = {
 
 export function templateDraft(plan: TargetPlan, macro: Macro): CardDraft {
   const emoji = DOMAIN_EMOJI[macro.domain] ?? "✨";
+  const pregen = pregenCard(macro.code);
   if (plan.mode === "creuser") {
+    // Carte de la banque reliée par les mots : l'activité pré-écrite, sous
+    // « C'est toi ? », se lit comme une question de vécu.
+    if (pregen && !plan.focus) {
+      return {
+        text: pregen.text,
+        hint: plan.parent ? clip(`Quand tu as fait : « ${plan.parent.text} »`, MAX_HINT) : undefined,
+        emoji: pregen.emoji ?? emoji,
+      };
+    }
     const text = plan.focus ?? macro.label;
     return {
       text: text.length > MAX_TEXT ? macro.label : text,
@@ -64,6 +76,7 @@ export function templateDraft(plan: TargetPlan, macro: Macro): CardDraft {
       emoji,
     };
   }
+  if (pregen) return { ...pregen, emoji: pregen.emoji ?? emoji };
   return { text: macro.label, hint: "Même si t'as jamais essayé", emoji };
 }
 
@@ -112,7 +125,17 @@ const draftJsonSchema = {
   additionalProperties: false,
 };
 
-export function buildCardPrompt(plan: TargetPlan, recentTexts: string[]): string {
+/** Ce que le LLM sait du jeune : uniquement des textes de cartes. */
+export type CardContext = {
+  /** Cartes montrées récemment (à ne pas répéter). */
+  recent: string[];
+  /** Cartes où il a dit oui (les plus récentes d'abord). */
+  liked: string[];
+  /** Cartes où il a dit "pas mon truc". */
+  disliked: string[];
+};
+
+export function buildCardPrompt(plan: TargetPlan, ctx: CardContext): string {
   const lines: string[] = [`Mode : ${plan.mode}`];
 
   if (plan.parent) lines.push(`Carte parente (le jeune a dit "déjà fait") : « ${plan.parent.text} »`);
@@ -121,15 +144,30 @@ export function buildCardPrompt(plan: TargetPlan, recentTexts: string[]): string
     const m = plan.candidates[0];
     lines.push(`Compétence ROME visée : « ${m.label} » (enjeu : ${m.enjeu})`);
     if (plan.focus) lines.push(`Précise sur ce point : « ${plan.focus} »`);
-  } else {
+  } else if (plan.mode === "creuser") {
     lines.push(
       "Choisis dans cette liste LA compétence la plus naturellement liée à la carte parente, et renvoie son code dans \"macro\" :",
       ...plan.candidates.map((m) => `- ${m.code} : ${m.label}`),
     );
+  } else {
+    lines.push(
+      "Choisis dans cette liste LA compétence qui prolonge le mieux ce que le jeune aime, et renvoie son code dans \"macro\" :",
+      ...plan.candidates.map((m) => `- ${m.code} : ${m.label} (enjeu : ${m.enjeu})`),
+    );
   }
 
-  if (recentTexts.length > 0) {
-    lines.push("Déjà montré (à ne pas répéter) :", ...recentTexts.map((t) => `- ${t}`));
+  if (plan.mode === "explorer" && ctx.liked.length > 0) {
+    lines.push(
+      "Il a dit oui à (ancre la situation dans cet univers quand c'est naturel, sans le recopier) :",
+      ...ctx.liked.map((t) => `- ${t}`),
+    );
+  }
+  if (plan.mode === "explorer" && ctx.disliked.length > 0) {
+    lines.push("Ça ne lui parle pas (évite ces univers) :", ...ctx.disliked.map((t) => `- ${t}`));
+  }
+
+  if (ctx.recent.length > 0) {
+    lines.push("Déjà montré (à ne pas répéter) :", ...ctx.recent.map((t) => `- ${t}`));
   }
 
   return lines.join("\n");
@@ -141,17 +179,14 @@ export function buildCardPrompt(plan: TargetPlan, recentTexts: string[]): string
 
 export type WrittenCard = { macro: Macro; draft: CardDraft; source: CardSource };
 
-export async function writeCard(
-  plan: TargetPlan,
-  recentTexts: string[],
-): Promise<WrittenCard> {
+export async function writeCard(plan: TargetPlan, ctx: CardContext): Promise<WrittenCard> {
   const fallback: WrittenCard = {
     macro: plan.candidates[0],
     draft: templateDraft(plan, plan.candidates[0]),
     source: "template",
   };
 
-  const prompt = buildCardPrompt(plan, recentTexts);
+  const prompt = buildCardPrompt(plan, ctx);
   const ask = (extra = "") =>
     completeJson({
       system: CARD_SYSTEM_PROMPT,
