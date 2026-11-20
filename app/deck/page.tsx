@@ -668,6 +668,9 @@ function ExperiencePrompt({
           « {cardText} »
         </p>
       )}
+      <p className="mt-1 text-center text-[10px] leading-snug text-ink/45">
+        On ne pose cette question que sur les cartes qui peuvent enrichir ton CV.
+      </p>
       <div className="mt-3 grid grid-cols-2 gap-3">
         <button
           type="button"

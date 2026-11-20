@@ -11,8 +11,9 @@ import {
   type Interview,
   type QuestionSource,
 } from "./interview";
+import { shouldAskExperience } from "./experienceAsk";
 import { createProfile, computeProfile, proposeConfirmation, resolveConfirmation } from "./score";
-import { nextCard, nextTraitPair } from "./select";
+import { dominantCenter, nextCard, nextTraitPair } from "./select";
 import type {
   Card,
   CenterId,
@@ -61,6 +62,8 @@ type SessionState = {
    * « Tu l'as déjà fait ? » avant de passer à la suite.
    */
   awaitingExperience: boolean;
+  /** Nombre de fois où la question de vécu a été posée (max 3). */
+  experienceAsks: number;
   /** Cartes "déjà fait" pour lesquelles une carte creuser a déjà été demandée. */
   creuserAsked: string[];
 
@@ -104,8 +107,12 @@ type SessionState = {
 
   /** « Continuer à swiper » sur l'écran de match. */
   dismissSkillMatch: () => void;
-  /** « Creuser » : ouvre (ou reprend) l'entretien sur cette expérience. */
-  startInterview: (cardId: string) => void;
+  /**
+   * « Creuser » : ouvre (ou reprend) l'entretien sur cette expérience.
+   * `proofText` est optionnel : la démo automatique peut partir d'une carte
+   * générée sans attendre la carte creuser (mode mock).
+   */
+  startInterview: (cardId: string, proofText?: string) => void;
   setInterviewQuestions: (cardId: string, questions: string[], source: QuestionSource) => void;
   answerInterview: (cardId: string, index: number, answer: string) => void;
   /** Écran courant de l'entretien (pour reprendre au même endroit). */
@@ -192,6 +199,7 @@ const initialState = {
   fetching: false,
   failures: 0,
   awaitingExperience: false,
+  experienceAsks: 0,
   creuserAsked: [] as string[],
   skillMatch: null as string | null,
   matchedSkills: [] as string[],
@@ -360,10 +368,27 @@ export const useSession = create<SessionState>()(
 
         const next = pickNext(state.queue, profile, responses);
 
-        // Oui sur une carte d'intérêt : on demande « déjà fait ? » avant la suite.
-        // (Une carte creuser est déjà une question de vécu.)
+        // Oui sur une carte d'intérêt : on ne demande « déjà fait ? » que si le
+        // vécu peut vraiment servir (domaine fort, assez de signal, quota).
+        const rightInterests = responses.filter(
+          (response) =>
+            response.direction === "right" &&
+            !response.cardId.startsWith("gen-creuser-"),
+        ).length;
+        const domain = profile.domains[dominantCenter(card)];
         const awaitingExperience =
-          direction === "right" && card.target?.mode !== "creuser" && !reason;
+          direction === "right" &&
+          !reason &&
+          shouldAskExperience({
+            direction,
+            isCreuser: card.target?.mode === "creuser",
+            pending: Boolean(pending),
+            rightInterests,
+            experienceAsks: state.experienceAsks,
+            interviewsCount: state.interviews.length,
+            domainMean: domain?.mean ?? 0.5,
+            domainConfirmed: Boolean(domain?.confirmed),
+          });
 
         // « Oui, c'est moi » sur une carte creuser = compétence ROME prouvée : match.
         const isSkillProof =
@@ -382,6 +407,8 @@ export const useSession = create<SessionState>()(
           lastResponse: { kind: "card", index: responses.length - 1 },
           startedAt: state.startedAt ?? Date.now(),
           awaitingExperience,
+          experienceAsks:
+            state.experienceAsks + (awaitingExperience ? 1 : 0),
         });
         if (!awaitingExperience) void get().pump();
       },
@@ -471,7 +498,7 @@ export const useSession = create<SessionState>()(
 
       dismissSkillMatch: () => set({ skillMatch: null }),
 
-      startInterview: (cardId) => {
+      startInterview: (cardId, proofText) => {
         const state = get();
         const cards = get().allCards();
         const proof = cards.find((c) => c.id === cardId);
@@ -483,7 +510,7 @@ export const useSession = create<SessionState>()(
             cardId,
             parentId: proof.target.parentId,
             parentText: parent?.text ?? proof.text,
-            proofText: proof.text,
+            proofText: proofText ?? proof.text,
             macro: proof.target.macro,
             skill: proof.target.label,
             questions: [],
@@ -547,14 +574,16 @@ export const useSession = create<SessionState>()(
     }),
     {
       name: "declic-session-v1",
-      version: 5,
+      version: 6,
       // v1 -> v2 : swipe adaptatif. v3 -> v4 : match de compétence + étape 2.
       // v4 -> v5 : questions CV réparties entre les entretiens, reprise possible.
+      // v5 -> v6 : question de vécu moins fréquente (quota + domaine fort).
       migrate: (persisted) => {
         const state = {
           generated: [],
           queue: [],
           creuserAsked: [],
+          experienceAsks: 0,
           skillMatch: null,
           matchedSkills: [],
           interviews: [],

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { AutoDemoController } from "../components/AutoDemo";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -28,6 +29,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         {children}
+        <AutoDemoController />
       </body>
     </html>
   );

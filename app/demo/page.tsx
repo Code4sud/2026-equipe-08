@@ -12,6 +12,7 @@ import {
 } from "../../lib/dossier/demo";
 import { extractExperience } from "../../lib/dossier/experience";
 import type { DemoUser, StudiesLevel } from "../../lib/dossier/types";
+import { StartAutoDemoButton } from "../../components/AutoDemo";
 import { useSession } from "../../lib/store";
 import { useMounted } from "../../lib/useMounted";
 
@@ -228,6 +229,9 @@ export default function DemoPage() {
           est ce qu&apos;on montre.
         </p>
         <div className="mt-5 flex flex-wrap gap-2">
+          <StartAutoDemoButton className="rounded-full bg-accent px-4 py-2.5 text-xs font-black text-paper">
+            ▶ Lancer la démo automatique
+          </StartAutoDemoButton>
           <button
             onClick={loadPersona}
             className="rounded-full bg-mint px-4 py-2.5 text-xs font-black text-ink"

@@ -8,6 +8,7 @@ Ce n'est pas un test psychologique. C'est une boussole : **le jeune valide tout 
 
 **Démo en ligne** : https://declic-livid.vercel.app
 **Démo locale (la vraie)** : `npm run dev` → `/dossier` et `/demo`. Guide : [`docs/LOCAL.md`](docs/LOCAL.md).
+**Démo automatique** : bouton **▶ Démo automatique** sur `/` ou `/demo` ; le scénario Sam joue le swipe, le style, les entretiens et le dossier final.
 
 - Modèle complet, décisions et limites : [`docs/BASELINE.md`](docs/BASELINE.md)
 - Swipe adaptatif (cartes écrites pour le jeune, ROME, LLM) : [`docs/SWIPE-ADAPTATIF.md`](docs/SWIPE-ADAPTATIF.md)

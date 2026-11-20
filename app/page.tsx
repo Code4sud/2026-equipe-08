@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { StartAutoDemoButton } from "../components/AutoDemo";
 
 const steps = [
   {
@@ -63,6 +64,9 @@ export default function Home() {
                 Commencer
                 <span aria-hidden>→</span>
               </Link>
+              <StartAutoDemoButton className="rounded-full border-2 border-accent/30 bg-accent/10 px-5 py-4 text-sm font-bold text-accent transition-colors hover:border-accent hover:bg-accent/15">
+                ▶ Démo automatique
+              </StartAutoDemoButton>
               <Link
                 href="/result"
                 className="rounded-full border border-ink/25 px-5 py-4 text-sm font-semibold text-ink/70 transition-colors hover:border-ink hover:text-ink"

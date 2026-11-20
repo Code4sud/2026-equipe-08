@@ -58,7 +58,25 @@ npm run dev
 - `/dossier` **la page à montrer**
 - `/demo` panneau de préparation de la démo
 
-## 4. Préparer la démo en 20 secondes
+## 4. Démo automatique (le bouton à montrer)
+
+Depuis `/` ou `/demo`, cliquer **▶ Démo automatique**. Le scénario Sam se joue
+tout seul :
+
+1. réinitialise la session et charge le persona Sam ;
+2. swipe une vingtaine de cartes avec des choix variés (pas un mur de « oui »
+   ou de « non ») ;
+3. répond aux confirmations de domaine ;
+4. joue les 15 paires de style ;
+5. ouvre un ou deux entretiens « Creuser » et remplit les réponses CV ;
+6. charge la **session officielle Sam** (2 entretiens riches, CV complet) ;
+7. affiche `/result` puis `/dossier`.
+
+Un bandeau **Démo auto** permet d'arrêter à tout moment. Le scénario est
+volontairement déterministe pour que la démo finale soit toujours la même :
+profil RIC, domaine manuel confirmé, deux récits et un CV rempli.
+
+## 4 bis. Préparer la démo manuellement
 
 1. Ouvrir `/demo`
 2. Cliquer **Charger le persona + dossier**
