@@ -122,13 +122,6 @@ export function AutoDemoController() {
       if (navigating.current) return;
       navigating.current = true;
       router.push(path);
-      // Filet de sécurité : si la navigation RSC est interrompue (ou trop
-      // lente), on force un chargement complet. Le store est persisté.
-      window.setTimeout(() => {
-        if (isAutoDemo() && window.location.pathname !== path) {
-          window.location.assign(path);
-        }
-      }, 1_500);
     },
     [router],
   );
