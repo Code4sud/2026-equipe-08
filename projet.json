@@ -6,5 +6,5 @@
   "stack": ["Claude", "Next.js", "ROME 4.0"],
   "demo": "https://declic-livid.vercel.app",
   "video": "https://www.youtube.com/watch?v=XXXXXXXXXXX",
-  "captures": ["captures/accueil.png", "captures/resultat.png"]
+  "captures": ["captures/screen1.png", "captures/screen2.png","captures/screen3.png","captures/screen4.png","captures/screen5.png","captures/screen6.png","captures/screen7.png"]
 }
